@@ -32,7 +32,7 @@ void* test_thread(void* arg)
 
     sleep(3);
 
-    sem.up(id);
+    sem.up();
 
     return nullptr;
 }
