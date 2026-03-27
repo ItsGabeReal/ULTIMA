@@ -6,7 +6,7 @@
 
 void* test_thread(void* arg);
 
-semaphore sem("Test semaphore", 1);
+Semaphore sem("Test semaphore", 1);
 
 int main()
 {

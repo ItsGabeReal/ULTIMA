@@ -1,14 +1,25 @@
+/**
+ * Sema.h
+ * 
+ * Basic semaphore class with variable values. Use the down() function to start
+ * using a resource, and up() to release it. If all resources are in use when
+ * down() is called, that thread will pause until a resource becomes available.
+ *
+ * @author Gabriel Wilson
+ * @date 3/27/2026
+ */
+
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
 #include "Queue.h"
 
-class semaphore
+class Semaphore
 {
 private:
     char* resource_name; // Name of this semaphore
     int sema_value;
-    queue sema_queue;
+    Queue sema_queue;
     pthread_mutex_t lock;
     pthread_cond_t cond;
 
@@ -20,12 +31,12 @@ public:
      * @param initial_value Number of resources available in this semaphore
      * (default: 1).
      */
-    semaphore(char* res_name, int initial_value = 1);
+    Semaphore(char* res_name, int initial_value = 1);
 
     /**
      * Destructor!!!
      */
-    ~semaphore();
+    ~Semaphore();
 
     /**
      * Requests access to a resource. If value is <= 0, the calling thread

@@ -1,6 +1,6 @@
 #include "Sema.h"
 
-semaphore::semaphore(char* res_name, int initialValue)
+Semaphore::Semaphore(char* res_name, int initialValue)
     : resource_name(res_name), sema_value(initialValue)
 {
     // Init lock and condition
@@ -8,7 +8,7 @@ semaphore::semaphore(char* res_name, int initialValue)
     pthread_cond_init(&cond, nullptr);
 }
 
-semaphore::~semaphore()
+Semaphore::~Semaphore()
 {
     pthread_mutex_destroy(&lock);
     pthread_cond_destroy(&cond);
@@ -17,7 +17,7 @@ semaphore::~semaphore()
     // there's not need to free it here.
 }
 
-void semaphore::down(int thread_id)
+void Semaphore::down(int thread_id)
 {
     pthread_mutex_lock(&lock);
 
@@ -43,7 +43,7 @@ void semaphore::down(int thread_id)
     pthread_mutex_unlock(&lock);
 }
 
-void semaphore::up()
+void Semaphore::up()
 {
     pthread_mutex_lock(&lock);
 
@@ -68,7 +68,7 @@ void semaphore::up()
     pthread_mutex_unlock(&lock);
 }
 
-void semaphore::dump(int level)
+void Semaphore::dump(int level)
 {
     if (level == 1) // Level 1 - Print single line
         std::cout << resource_name << " - Current value = " << sema_value << std::endl;

@@ -1,5 +1,7 @@
 /**
- * A generic singly-linked-list FIFO queue.
+ * Queue.h
+ * 
+ * A singly-linked-list FIFO queue of type int.
  *
  * @author Gabriel Wilson
  * @date 3/27/2026
@@ -14,27 +16,27 @@
 /**
  * Internal linked-list node used by queue.h.
  */
-struct node
+struct Node
 {
     int value;
-    node* next;
+    Node* next;
 };
 
 /**
  * A FIFO queue using a singly linked list.
  */
-class queue
+class Queue
 {
 private:
-    node* head;
-    node* tail;
+    Node* head;
+    Node* tail;
 
 public:
     // Constructs an empty queue
-    queue() : head(nullptr), tail(nullptr) {}
+    Queue() : head(nullptr), tail(nullptr) {}
 
     // Destructor that frees all items
-    ~queue();
+    ~Queue();
 
     // Deletes all items
     void clear();
@@ -61,8 +63,5 @@ public:
      * value1 is the head, and valueN is the tail.
      */
     std::string to_string();
-
-    // Prints all elements from front to back to stdout
-    void print();
 };
 

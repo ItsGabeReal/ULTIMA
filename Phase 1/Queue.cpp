@@ -1,14 +1,14 @@
 #include "Queue.h"
 #include <sstream>
 
-queue::~queue()
+Queue::~Queue()
 {
     clear();
 }
 
-void queue::clear()
+void Queue::clear()
 {
-    node* n;
+    Node* n;
     while (head != nullptr)
     {
         n = head->next;
@@ -19,9 +19,9 @@ void queue::clear()
     tail = nullptr;
 }
 
-void queue::enqueue(int value)
+void Queue::enqueue(int value)
 {
-    node* n = new node();
+    Node* n = new Node();
     n->value = value;
     n->next = nullptr;
 
@@ -36,7 +36,7 @@ void queue::enqueue(int value)
     }
 }
 
-int queue::dequeue()
+int Queue::dequeue()
 {
     if (is_empty())
         throw std::underflow_error("Stack is empty");
@@ -50,7 +50,7 @@ int queue::dequeue()
     }
     else
     {
-        node* n = head;
+        Node* n = head;
         head = head->next;
         delete n;
     }
@@ -58,10 +58,10 @@ int queue::dequeue()
     return value;
 }
 
-int queue::length()
+int Queue::length()
 {
     int output = 0;
-    node* n = head;
+    Node* n = head;
     while (n != nullptr)
     {
         ++output;
@@ -71,16 +71,16 @@ int queue::length()
     return output;
 }
 
-bool queue::is_empty()
+bool Queue::is_empty()
 {
     return head == nullptr;
 }
 
-std::string queue::to_string()
+std::string Queue::to_string()
 {
     std::stringstream str;
 
-    node* n = head;
+    Node* n = head;
     while (n != nullptr)
     {
         str << n->value;
@@ -91,27 +91,4 @@ std::string queue::to_string()
     }
 
     return str.str();
-}
-
-void queue::print()
-{
-    // Print size
-    int size = 0;
-    node* n = head;
-    while (n != nullptr)
-    {
-        ++size;
-        n = n->next;
-    }
-    std::cout << "Queue Size = " << size << std::endl;
-
-    // Print queue contents
-    std::cout << "Queue Head<-";
-    n = head;
-    while (n != nullptr)
-    {
-        std::cout << n->value << "<-";
-        n = n->next;
-    }
-    std::cout << "Tail" << std::endl;
 }
