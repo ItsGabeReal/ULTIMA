@@ -43,7 +43,7 @@ void semaphore::down(int thread_id)
     pthread_mutex_unlock(&lock);
 }
 
-void semaphore::up(int thread_id)
+void semaphore::up()
 {
     pthread_mutex_lock(&lock);
 

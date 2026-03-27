@@ -37,7 +37,7 @@ public:
      * Releases usage of the resource. If there are threads on the waitlist, they
      * will resume execution.
      */
-    void up(int thread_id);
+    void up();
 
     /**
      * Prints details to the console, including 

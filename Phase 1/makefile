@@ -17,7 +17,7 @@ build/%.o: %.cpp | build
 build:
 	mkdir -p build
 
-# Remove all built material
+# Removes all built material when `make clean` is run
 clean:
 	rm -rf build
 	rm Ultima
