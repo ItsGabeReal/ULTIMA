@@ -1,5 +1,5 @@
 # List of source files to include
-SRCS = Ultima.cpp Queue.cpp Sema.cpp
+SRCS = Ultima.cpp Queue.cpp Sema.cpp Sched.cpp
 OBJS = $(SRCS:%.cpp=build/%.o) # Define a .o file for every .cpp file
 
 # Entry point for the `make` command
