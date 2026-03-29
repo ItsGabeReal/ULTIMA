@@ -21,3 +21,7 @@ build:
 clean:
 	rm -rf build
 	rm Ultima
+
+# With this, entering `make run` will compile and immediately run the program
+run: Ultima
+	./Ultima
