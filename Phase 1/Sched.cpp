@@ -5,6 +5,7 @@ Scheduler::Scheduler()
     process_table = nullptr;    // No processes yet
     current_task = -1;          // No task is running
     current_quantum = 500;      // Set quantum length to 500ms
+    next_available_id = 1;      // Start ids at 1
 }
 
 Scheduler::~Scheduler()
@@ -12,46 +13,46 @@ Scheduler::~Scheduler()
     std::cout << "Exiting Scheduler....." << std::endl;
 }
 
-int Scheduler::create_task(std::string task_name, void *(*task_function)(void *))
+int Scheduler::create_task(std::string task_name, void *(*task_function)(void *), void *args)
 {
     TCB *new_task = new TCB();
 
+    new_task->task_id = next_available_id++;
     new_task->task_name = task_name;
     new_task->state = READY;
     new_task->start_time = clock();
     new_task->next = process_table;
     process_table = new_task;
 
-    new_task->task_id = pthread_create(&(new_task->thread), nullptr, task_function, (void*)1);
+    int result = pthread_create(&(new_task->thread), nullptr, task_function, args);
+    assert(!result); // if there are any problems with result, display it and end program.
 
     return new_task->task_id;
 }
 
-void Scheduler::dump(int level)
+void Scheduler::dump(WINDOW *Win, int level)
 {
     if (level != 1 && level != 2) // If not expected level, print error and exit
     {
         std::cerr << level << " is an invalid level" << std::endl;
         return;
     }
-
-    std::cout << "-----------Process Table-----------" << std::endl;
+    wHelper.clear_window(Win);
+    wHelper.write_window(Win, 1, 0, " -----------Process Table-----------\n");
+    wHelper.write_window(Win, " Name\tID\tState\tStart\n");
+    wHelper.write_window(Win, " -----------------------------------\n");
 
     TCB *current_task = process_table;
     int count = 0;
     while (current_task != nullptr)
     {
-        std::cout << std::setw(7) << current_task->task_name
-                  << std::setw(7) << current_task->task_id
-                  << std::setw(7) << current_task->state
-                  << std::setw(7) << current_task->start_time
-                  << std::endl;
+        wHelper.write_window(Win, " " + current_task->task_name + "\t" + std::to_string(current_task->task_id) + "\t" + current_task->state + "\t" + std::to_string(current_task->start_time) + "\n");
 
         current_task = current_task->next;
         count++;
     }
 
-    std::cout << "-----------------------------------" << std::endl;
+    wHelper.write_window(Win, " -----------------------------------\n");
 }
 
 // This testing should be handled in Ultima.cpp  \/
