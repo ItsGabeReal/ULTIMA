@@ -41,7 +41,7 @@ TCB *Scheduler::get_tcb_pointer(int task_id)
     return nullptr;
 }
 
-bool Scheduler::kill_task(int task_id)
+void Scheduler::kill_task(int task_id)
 {
     TCB *t = get_tcb_pointer(task_id);
     t->state = DEAD;
@@ -96,20 +96,20 @@ void Scheduler::dump(WINDOW *Win, int level)
         std::cerr << level << " is an invalid level" << std::endl;
         return;
     }
-    wManager.clear_window(Win);
-    wManager.write_window(Win, 1, 0, " -----------Process Table-----------\n");
-    wManager.write_window(Win, " Name\tID\tState\tStart\n");
-    wManager.write_window(Win, " -----------------------------------\n");
+    wManager.clear_window(Win, 0);
+    wManager.write_window(Win, 0, 1, 0, " -----------Process Table-----------\n");
+    wManager.write_window(Win, 0, " Name\tID\tState\tStart\n");
+    wManager.write_window(Win, 0, " -----------------------------------\n");
 
     TCB *current_task = process_table;
     int count = 0;
     while (current_task != nullptr)
     {
-        wManager.write_window(Win, " " + current_task->task_name + "\t" + std::to_string(current_task->task_id) + "\t" + current_task->state + "\t" + std::to_string(current_task->start_time) + "\n");
+        wManager.write_window(Win, 0, " " + current_task->task_name + "\t" + std::to_string(current_task->task_id) + "\t" + current_task->state + "\t" + std::to_string(current_task->start_time) + "\n");
 
         current_task = current_task->next;
         count++;
     }
 
-    wManager.write_window(Win, " -----------------------------------\n");
+    wManager.write_window(Win, 0, " -----------------------------------\n");
 }

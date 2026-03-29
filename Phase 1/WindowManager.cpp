@@ -15,6 +15,11 @@ WindowManager::WindowManager(int main_thread_id)
     write_window(Log_Win, DEFAULT_THREAD_ID, " ..........Main program started..........\n");
 }
 
+WindowManager::~WindowManager()
+{
+    write_window(Log_Win, 0, "Exiting WindowManager...");
+}
+
 WINDOW *WindowManager::create_window(int height, int width, int starty, int startx, int thread_id)
 {
     window_lock.down(thread_id);
@@ -50,9 +55,9 @@ void WindowManager::write_window(WINDOW *Win, int thread_id, int y, int x, std::
     window_lock.up();
 }
 
-void WindowManager::dump_window(WINDOW *Win, int thread_id, std::string dump)
-{
-}
+// void WindowManager::dump_window(WINDOW *Win, int thread_id, std::string dump)
+// {
+// }
 
 void WindowManager::clear_window(WINDOW *Win, int thread_id)
 {

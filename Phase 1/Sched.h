@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-extern WindowManager wManager; // Using global wHelper from Ultima.cpp
+extern WindowManager wManager; // Using global wManager from Ultima.cpp
 
 const std::string READY = "READY";
 const std::string RUNNING = "RUNNING";
@@ -79,7 +79,7 @@ public:
      * 
      * @param task_id Id of the task to be killed.
      */
-    bool kill_task(int task_id);
+    void kill_task(int task_id);
 
     /**
      * Attempts to give the scheduler back control from the task. The scheduler could
