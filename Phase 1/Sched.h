@@ -26,7 +26,7 @@ const std::string RUNNING = "RUNNING";
 const std::string BLOCKED = "BLOCKED";
 const std::string DEAD = "DEAD";
 
-const int MAX_TASKS = 100;
+const int MAX_TASKS = 3;
 
 struct TCB
 {
@@ -68,6 +68,11 @@ public:
      * @param args Additional arguments for the task.
      */
     int create_task(std::string task_name, void *(*task_function)(void *), void *args);
+
+    /**
+     * Gets the TCB pointer of the task by id if it exists.
+     */
+    TCB *get_tcb_pointer(int task_id);
 
     /**
      * Kills the specified task.

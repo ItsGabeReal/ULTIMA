@@ -30,6 +30,65 @@ int Scheduler::create_task(std::string task_name, void *(*task_function)(void *)
     return new_task->task_id;
 }
 
+TCB *Scheduler::get_tcb_pointer(int task_id)
+{
+    TCB *t = process_table;
+    while (t != nullptr)
+    {
+        if (t->task_id == task_id) return t;
+        t = t->next;
+    }
+    return nullptr;
+}
+
+bool Scheduler::kill_task(int task_id)
+{
+    TCB *t = get_tcb_pointer(task_id);
+    t->state = DEAD;
+}
+
+void Scheduler::yield()
+{
+    int counter = 0;
+    // output
+
+    // Calculate elapsed_time since the task last started to run.
+    clock_t elapsed_time = clock() - get_tcb_pointer(current_task)->start_time;
+    //Output some more stuff
+
+    if (elapsed_time < current_quantum) 
+    {
+        // Output NO Yield
+        return;
+    }
+
+    // Output Yielding.....
+
+    // If current task is RUNNING we change its state to READY
+    TCB *running_task = get_tcb_pointer(current_task);
+    if (running_task != nullptr && running_task->state == RUNNING)
+        running_task->state = READY;
+
+    // Find the next READY task and make it RUNNING
+    current_task = (current_task % MAX_TASKS) + 1;
+    while (get_tcb_pointer(current_task)->state != READY && counter < MAX_TASKS)
+    {
+        current_task = (current_task % MAX_TASKS) + 1;
+        counter++;
+    }
+
+    // If we find a READY task, start it. If not, possible DEAD LOCK situtation
+    TCB *found_task = get_tcb_pointer(current_task);
+    if (counter < MAX_TASKS && found_task->state == READY)
+    {
+        found_task->start_time = clock();
+        found_task->state = RUNNING;
+        // Output started running task # (current task)
+    }
+    // Else output possible DEAD LOCK
+}
+
+
 void Scheduler::dump(WINDOW *Win, int level)
 {
     if (level != 1 && level != 2) // If not expected level, print error and exit
@@ -54,25 +113,3 @@ void Scheduler::dump(WINDOW *Win, int level)
 
     wHelper.write_window(Win, " -----------------------------------\n");
 }
-
-// This testing should be handled in Ultima.cpp  \/
-// int main()
-// {
-//     Scheduler scheduler;
-
-//     scheduler.create_task("Task1");
-//     scheduler.create_task("Task2");
-//     scheduler.create_task("Task3");
-//     scheduler.create_task("Task4");
-
-//     scheduler.dump(1);
-//     for (int i = 0; i < 1000000000; i++)
-//     {
-//         int j = i + i * i;
-//         if (i % 100000000 == 0)
-//         {
-//             scheduler.create_task("Task" + std::to_string(i / 100000000));
-//         }
-//     }
-//     scheduler.dump(1);
-// }
