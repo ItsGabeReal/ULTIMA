@@ -9,6 +9,9 @@
  * @date 3/27/2026
  */
 
+#ifndef SEMAPHORE_H
+#define SEMAPHORE_H
+
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
@@ -57,3 +60,5 @@ public:
      */
     void dump(int level = 2);
 };
+
+#endif // SEMAPHORE_H

@@ -15,11 +15,11 @@
 #include <iostream>
 #include <iomanip>
 #include <pthread.h>
-#include "WindowHelper.h"
+#include "WindowManager.h"
 #include <unistd.h>
 #include <assert.h>
 
-extern WindowHelper wHelper; // Using global wHelper from Ultima.cpp
+extern WindowManager wManager; // Using global wHelper from Ultima.cpp
 
 const std::string READY = "READY";
 const std::string RUNNING = "RUNNING";

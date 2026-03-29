@@ -96,20 +96,20 @@ void Scheduler::dump(WINDOW *Win, int level)
         std::cerr << level << " is an invalid level" << std::endl;
         return;
     }
-    wHelper.clear_window(Win);
-    wHelper.write_window(Win, 1, 0, " -----------Process Table-----------\n");
-    wHelper.write_window(Win, " Name\tID\tState\tStart\n");
-    wHelper.write_window(Win, " -----------------------------------\n");
+    wManager.clear_window(Win);
+    wManager.write_window(Win, 1, 0, " -----------Process Table-----------\n");
+    wManager.write_window(Win, " Name\tID\tState\tStart\n");
+    wManager.write_window(Win, " -----------------------------------\n");
 
     TCB *current_task = process_table;
     int count = 0;
     while (current_task != nullptr)
     {
-        wHelper.write_window(Win, " " + current_task->task_name + "\t" + std::to_string(current_task->task_id) + "\t" + current_task->state + "\t" + std::to_string(current_task->start_time) + "\n");
+        wManager.write_window(Win, " " + current_task->task_name + "\t" + std::to_string(current_task->task_id) + "\t" + current_task->state + "\t" + std::to_string(current_task->start_time) + "\n");
 
         current_task = current_task->next;
         count++;
     }
 
-    wHelper.write_window(Win, " -----------------------------------\n");
+    wManager.write_window(Win, " -----------------------------------\n");
 }
