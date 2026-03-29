@@ -1,6 +1,10 @@
-# List of source files to include
-SRCS = Ultima.cpp Queue.cpp Sema.cpp Sched.cpp WindowHelper.cpp
+# Sources to include in the main application
+SRCS = Ultima.cpp Queue.cpp Sema.cpp Sched.cpp WindowManager.cpp
 OBJS = $(SRCS:%.cpp=build/%.o) # Define a .o file for every .cpp file
+
+# Sources to include for unit testing
+TEST_SRCS = UnitTest.cpp Queue.cpp Sema.cpp Sched.cpp
+TEST_OBJS = $(TEST_SRCS:%.cpp=build/%.o)
 
 # Entry point for the `make` command
 all: Ultima
@@ -20,8 +24,14 @@ build:
 # Removes all built material when `make clean` is run
 clean:
 	rm -rf build
-	rm Ultima
+	rm -f Ultima UnitTest
 
 # With this, entering `make run` will compile and immediately run the program
 run: Ultima
 	./Ultima
+
+# Build and run unit tests
+test: $(TEST_OBJS)
+	g++ $^ -o UnitTest -lncurses
+	./UnitTest
+
