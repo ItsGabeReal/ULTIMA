@@ -50,19 +50,20 @@ void Scheduler::kill_task(int task_id)
 void Scheduler::yield()
 {
     int counter = 0;
-    // output
+    wManager.log("Current Task # " + std::to_string(current_task) + " is trying to Yield\n");
 
     // Calculate elapsed_time since the task last started to run.
     clock_t elapsed_time = clock() - get_tcb_pointer(current_task)->start_time;
-    //Output some more stuff
+    wManager.log("Task: " + std::to_string(current_task) + ", Elapsed time: " + std::to_string(elapsed_time) + "\n");
+    wManager.log("Current Quantum: " + std::to_string(current_quantum) + "\n");
 
     if (elapsed_time < current_quantum) 
     {
-        // Output NO Yield
+        wManager.log("NO Yield!   (task: " + std::to_string(current_task) + " still has some quantum left)\n");
         return;
     }
 
-    // Output Yielding.....
+    wManager.log("Yielding.... (Switching from task #" + std::to_string(current_task) + " to next ready task)");
 
     // If current task is RUNNING we change its state to READY
     TCB *running_task = get_tcb_pointer(current_task);
@@ -83,9 +84,10 @@ void Scheduler::yield()
     {
         found_task->start_time = clock();
         found_task->state = RUNNING;
-        // Output started running task # (current task)
+        wManager.log("Started running task # " + std::to_string(current_task) + "\n");
     }
-    // Else output possible DEAD LOCK
+    else
+        wManager.log("POSSIBLE DEAD LOCK");
 }
 
 
