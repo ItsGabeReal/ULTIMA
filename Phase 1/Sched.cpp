@@ -20,7 +20,7 @@ int Scheduler::create_task(std::string task_name, void *(*task_function)(void *)
     new_task->task_id = next_available_id++;
     new_task->task_name = task_name;
     new_task->state = READY;
-    new_task->start_time = clock();
+    // new_task->start_time = clock();
     new_task->next = process_table;
     process_table = new_task;
 
@@ -28,6 +28,17 @@ int Scheduler::create_task(std::string task_name, void *(*task_function)(void *)
     assert(!result); // if there are any problems with result, display it and end program.
 
     return new_task->task_id;
+}
+
+void Scheduler::start()
+{
+    // process_table points to first task
+    process_table->start_time = clock();
+    process_table->state = RUNNING;
+    current_task = process_table->task_id;
+    current_quantum = 1000 / MAX_TASKS;
+
+    sleep(1);
 }
 
 TCB *Scheduler::get_tcb_pointer(int task_id)

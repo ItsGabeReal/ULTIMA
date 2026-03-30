@@ -67,6 +67,11 @@ public:
     int create_task(std::string task_name, void *(*task_function)(void *), void *args);
 
     /**
+     * Initiates the scheduler and starts the first task.
+     */
+    void start();
+
+    /**
      * Gets the TCB pointer of the task by id if it exists.
      */
     TCB *get_tcb_pointer(int task_id);
