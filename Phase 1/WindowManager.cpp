@@ -20,7 +20,7 @@ WindowManager::~WindowManager()
     write_window(Log_Win, 0, "Exiting WindowManager...");
 }
 
-WINDOW *WindowManager::create_window(int height, int width, int starty, int startx, int thread_id)
+WINDOW *WindowManager::create_window(int thread_id, int height, int width, int starty, int startx)
 {
     window_lock.down(thread_id);
     WINDOW *Win;

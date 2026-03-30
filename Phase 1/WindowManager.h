@@ -36,7 +36,7 @@ public:
 
     /**
      * Creates a new nCurses window with the given parameters.
-     *
+     * @param thread_id Id of thread creating the window
      * @param height Height of the window
      * @param width Width of the window
      * @param starty Y coordinate for top left corner
