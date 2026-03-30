@@ -1,37 +1,46 @@
-#include "Sema.h"
+#include <iostream>
 #include <pthread.h>
 #include <unistd.h>
+#include "Sema.h"
+#include "Sched.h"
 
-void* test_thread(void* arg);
+Scheduler scheduler;
+Semaphore sem("Test resource", &scheduler, 1);
 
-Scheduler sch;
-Semaphore sem("Test semaphore", &sch, 1);
-
-int main()
+void* worker(void* arg)
 {
-    const int THREAD_COUNT = 3;
-    pthread_t threads[THREAD_COUNT];
-
-    for (long i = 0; i < THREAD_COUNT; ++i)
-        pthread_create(&threads[i], nullptr, test_thread, (void*)i);
+    int id = *((int*)arg);
+    std::cout << "Task " << id << " started \n";
     
-    for (long i = 0; i < THREAD_COUNT; ++i)
-        pthread_join(threads[i], nullptr);
+    //acquire the resources"
+    sem.down(0);
 
-    return 0;
-}
+    std::cout << "Task " << id << " Enter critical section \n";
+    sleep(2); // Simulate work
 
-void* test_thread(void* arg)
-{
-    long id = (long)arg;
-
-    sem.down(id);
-
-    sem.dump();
-
-    sleep(3);
+    std::cout << "Task " << id << " Exit critical section \n";
 
     sem.up();
 
+    scheduler.set_state(id, DEAD);
     return nullptr;
+}
+
+int main()
+{
+    std::cout << "Starting unit test for Semaphore and Scheduler \n";
+
+    // Create worker threads
+    int id1 = 1, id2 = 2, id3 = 3;
+    //create tasks using scheduler
+    scheduler.create_task("Task1", worker, &id1);
+    scheduler.create_task("Task2", worker, &id2);
+    scheduler.create_task("Task3", worker, &id3);
+
+    //start scheduler
+    scheduler.start();
+    sleep(10); // Let the tasks run
+
+    std::cout << "Unit test completed \n";
+    return 0;
 }
