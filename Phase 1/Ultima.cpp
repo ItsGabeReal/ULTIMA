@@ -41,7 +41,8 @@ void *perform_cpu_work(void *arguments);
 void *perform_io_work(void *arguments);
 //--------------------------------------------------------
 
-WindowManager wManager(MAIN_THREAD_ID);
+Scheduler scheduler;
+WindowManager wManager(MAIN_THREAD_ID, &scheduler);
 
 //--------------------------------------------------------
 // Data Structure for each thread.
@@ -196,7 +197,7 @@ void *perform_cpu_work(void *arguments)
 
 int main()
 {
-    Scheduler scheduler;
+    
 
     //------------------------------------------------------------------------------
     // Create the Thread variables    
@@ -348,11 +349,11 @@ int main()
             break;
         case KEY_MOUSE:
             // Check and report mouse event
-            // if (getmouse(&event) == OK)
-            // {
-            //     sprintf(buff, " Mouse event at x=%d, y=%d\n", event.x, event.y);
-            //     wManager.log(buff);
-            // }
+            if (getmouse(&event) == OK)
+            {
+                sprintf(buff, " Mouse event at x=%d, y=%d\n", event.x, event.y);
+                wManager.log(buff);
+            }
             break;
         default:
 

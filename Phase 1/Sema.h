@@ -15,26 +15,30 @@
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
+#include <string>
 #include "Queue.h"
+#include "Sched.h"
 
 class Semaphore
 {
 private:
-    char* resource_name; // Name of this semaphore
+    std::string resource_name; // Name of this semaphore
     int sema_value;
     Queue sema_queue;
+    Scheduler* sched_ptr;
     pthread_mutex_t lock;
     pthread_cond_t cond;
+    int lucky_task;
 
 public:
     /**
-     * Default constructor
+     * Constructor
      * 
      * @param res_name Name of the resource this semaphore regulates.
      * @param initial_value Number of resources available in this semaphore
      * (default: 1).
      */
-    Semaphore(char* res_name, int initial_value = 1);
+    Semaphore(std::string res_name, Scheduler *scheduler, int initial_value);
 
     /**
      * Destructor!!!
@@ -58,7 +62,7 @@ public:
      * 
      * @param level Specifies the amount of information printed (Default: 2).
      */
-    void dump(int level = 2);
+    void dump(int level = 1);
 };
 
-#endif // SEMAPHORE_H
+#endif

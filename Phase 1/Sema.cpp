@@ -1,7 +1,7 @@
 #include "Sema.h"
 
-Semaphore::Semaphore(char* res_name, int initialValue)
-    : resource_name(res_name), sema_value(initialValue)
+Semaphore::Semaphore(std::string res_name, Scheduler *scheduler, int initial_value)
+    : resource_name(res_name), sched_ptr(scheduler), sema_value(initial_value), lucky_task(-1)
 {
     // Init lock and condition
     pthread_mutex_init(&lock, nullptr);
@@ -17,68 +17,87 @@ Semaphore::~Semaphore()
     // there's not need to free it here.
 }
 
-void Semaphore::down(int thread_id)
+void Semaphore::down(int task_id)
 {
-    pthread_mutex_lock(&lock);
-
-    // Enter critical region
-    if (sema_value >= 1)
-        --sema_value;
+    if (task_id == lucky_task)
+    {
+        std::cout << "Task # " << lucky_task << " already has the resource! Ignore request." << std::endl;
+        dump();
+    }
     else
     {
-        pthread_t self = pthread_self();
-        std::cout << "\tThread - " << thread_id << " is being placed on queue (Internal Thread No - " << self << ")" << std::endl;
-        sema_queue.enqueue(thread_id);
-
-        do
+        if (sema_value >= 1)
         {
-            pthread_cond_wait(&cond, &lock);
-        } while (sema_value < 0);
+            --sema_value;
+            lucky_task = task_id;
+            dump();
+        }
+        else
+        {
+            sema_queue.enqueue(task_id);
+            sched_ptr.set_state(task_id, BLOCKED);
+            dump();
 
-        std::cout << "\tThread - " << thread_id << " just got released from the queue and re-acquired mutex lock" << std::endl;
+            sched_ptr->yield();
+            dump();
+        }
     }
-    
-    // Exit critical region
-
-    pthread_mutex_unlock(&lock);
 }
 
 void Semaphore::up()
 {
-    pthread_mutex_lock(&lock);
+    // pthread_mutex_lock(&lock);
 
-    // Enter critical region
+    int task_id;
 
-    if (sema_value <= 0)
+    std::cout << "TaskID: " << sched_ptr->get_task_id() << ", LuckyID: " << lucky_task << std::endl;
+
+    if (sched_ptr->get_task_id() == lucky_task)
     {
-        int id;
-        if (!sema_queue.is_empty())
+        if (sema_queue.is_empty())
         {
-            id = sema_queue.dequeue();
+            ++sema_value;
+            lucky_task = -1;
+            dump();
         }
-        std::cout << "\tSignal Blocked Thread " << id << " to be released\n";
-
-        pthread_cond_signal(&cond); // Send signal to release blocked threads
+        else
+        {
+            task_id = sema_queue.dequeue();
+            sched_ptr->set_state(task_id, READY);
+            std::cout << "UnBlock: " << task_id << " and release from the queue" << std::endl;
+            dump();
+            sched_ptr->yield();
+            dump();
+        }
     }
     else
-        ++sema_value;
-    
-    // Exit critical region
+    {
+        std::cout << "Invalid Semaphore UP(). TaskID: "
+            << sched_ptr->get_task_id()
+            << " does not own the resource" << std::endl;
+        
+        dump();
+    }
 
-    pthread_mutex_unlock(&lock);
+    // pthread_mutex_unlock(&lock);
 }
 
 void Semaphore::dump(int level)
 {
-    if (level == 1) // Level 1 - Print single line
-        std::cout << resource_name << " - Current value = " << sema_value << std::endl;
-    
-    else if (level == 2) // Level 2 - Print multiple lines
+    std::cout << "---------- SEMAPHORE DUMP ----------" << std::endl;
+    if (level == 0)
     {
-        std::cout << "Resource:\t" << resource_name << std::endl;
-        std::cout << "Sema_value:\t" << sema_value << std::endl;
-        std::cout << "Sema_queue:\t" << sema_queue.to_string() << std::endl;
+        std::cout << "Sema_Value: " << sema_value << std::endl;
+        std::cout << "Sema_Name: " << resource_name << std::endl;
+        std::cout << "Obtained by Task-ID: " << lucky_task << std::endl;
     }
-    else // Print error if level is invalid
-        std::cerr << level << " is an invalid level" << std::endl;
+    else if (level == 1)
+    {
+        std::cout << "Sema_Value: " << sema_value << std::endl;
+        std::cout << "Sema_Name: " << resource_name << std::endl;
+        std::cout << "Obtained by Task-ID: " << lucky_task << std::endl;
+        std::cout << "Sema_Queue: " << sema_queue.to_string() << std::endl;
+    }
+    else
+        std::cerr << level << " is an invalid semaphore dump level" << std::endl;
 }

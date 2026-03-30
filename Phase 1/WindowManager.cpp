@@ -1,7 +1,7 @@
 #include "WindowManager.h"
 
-WindowManager::WindowManager(int main_thread_id)
-    : window_lock("Window", 1)
+WindowManager::WindowManager(int main_thread_id, Scheduler* scheduler)
+    : window_lock("Window", scheduler, 100)
 {
     const int DEFAULT_THREAD_ID = 0;
 

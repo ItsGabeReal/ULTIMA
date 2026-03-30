@@ -29,7 +29,7 @@ private:
     void display_help(WINDOW *Win);
 public:
 
-    WindowManager(int main_thread_id);
+    WindowManager(int main_thread_id, Scheduler* scheduler);
     ~WindowManager();
 
     /**
