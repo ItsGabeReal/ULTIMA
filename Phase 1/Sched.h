@@ -15,11 +15,8 @@
 #include <iostream>
 #include <iomanip>
 #include <pthread.h>
-#include "WindowManager.h"
 #include <unistd.h>
 #include <assert.h>
-
-extern WindowManager wManager; // Using global wManager from Ultima.cpp
 
 const std::string READY = "READY";
 const std::string RUNNING = "RUNNING";
@@ -119,6 +116,6 @@ public:
      * @param Win Window to output the dump
      * @param level Amount of detail shown (Default: 2)
      */
-    void dump(WINDOW *Win, int level = 2);
+    void dump(int level = 2);
 };
 #endif

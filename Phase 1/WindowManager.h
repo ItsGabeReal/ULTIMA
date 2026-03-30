@@ -13,6 +13,7 @@
 #include <ncurses.h>
 #include <pthread.h>
 #include <string>
+#include "Sched.h"
 #include "Sema.h"
 #include "Sched.h"
 

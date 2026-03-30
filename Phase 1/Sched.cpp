@@ -67,20 +67,20 @@ void Scheduler::kill_task(int task_id)
 void Scheduler::yield()
 {
     int counter = 0;
-    wManager.log("Current Task # " + std::to_string(current_task) + " is trying to Yield\n");
+    // wManager.log("Current Task # " + std::to_string(current_task) + " is trying to Yield\n");
 
     // Calculate elapsed_time since the task last started to run.
     clock_t elapsed_time = clock() - get_tcb_pointer(current_task)->start_time;
-    wManager.log("Task: " + std::to_string(current_task) + ", Elapsed time: " + std::to_string(elapsed_time) + "\n");
-    wManager.log("Current Quantum: " + std::to_string(current_quantum) + "\n");
+    // wManager.log("Task: " + std::to_string(current_task) + ", Elapsed time: " + std::to_string(elapsed_time) + "\n");
+    // wManager.log("Current Quantum: " + std::to_string(current_quantum) + "\n");
 
     if (elapsed_time < current_quantum) 
     {
-        wManager.log("NO Yield!   (task: " + std::to_string(current_task) + " still has some quantum left)\n");
+        // wManager.log("NO Yield!   (task: " + std::to_string(current_task) + " still has some quantum left)\n");
         return;
     }
 
-    wManager.log("Yielding.... (Switching from task #" + std::to_string(current_task) + " to next ready task)");
+    // wManager.log("Yielding.... (Switching from task #" + std::to_string(current_task) + " to next ready task)");
 
     // If current task is RUNNING we change its state to READY
     TCB *running_task = get_tcb_pointer(current_task);
@@ -101,34 +101,35 @@ void Scheduler::yield()
     {
         found_task->start_time = clock();
         found_task->state = RUNNING;
-        wManager.log("Started running task # " + std::to_string(current_task) + "\n");
+        // wManager.log("Started running task # " + std::to_string(current_task) + "\n");
     }
-    else
-        wManager.log("POSSIBLE DEAD LOCK");
+    else {}
+        // wManager.log("POSSIBLE DEAD LOCK");
 }
 
 
-void Scheduler::dump(WINDOW *Win, int level)
+void Scheduler::dump(int level)
 {
+    return;
     if (level != 1 && level != 2) // If not expected level, print error and exit
     {
         std::cerr << level << " is an invalid level" << std::endl;
         return;
     }
-    wManager.clear_window(Win, 0);
-    wManager.write_window(Win, 0, 1, 0, " -----------Process Table-----------\n");
-    wManager.write_window(Win, 0, " Name\tID\tState\tStart\n");
-    wManager.write_window(Win, 0, " -----------------------------------\n");
+    // wManager.clear_window(Win, 0);
+    // wManager.write_window(Win, 0, 1, 0, " -----------Process Table-----------\n");
+    // wManager.write_window(Win, 0, " Name\tID\tState\tStart\n");
+    // wManager.write_window(Win, 0, " -----------------------------------\n");
 
     TCB *current_task = process_table;
     int count = 0;
     while (current_task != nullptr)
     {
-        wManager.write_window(Win, 0, " " + current_task->task_name + "\t" + std::to_string(current_task->task_id) + "\t" + current_task->state + "\t" + std::to_string(current_task->start_time) + "\n");
+        // wManager.write_window(Win, 0, " " + current_task->task_name + "\t" + std::to_string(current_task->task_id) + "\t" + current_task->state + "\t" + std::to_string(current_task->start_time) + "\n");
 
         current_task = current_task->next;
         count++;
     }
 
-    wManager.write_window(Win, 0, " -----------------------------------\n");
+    // wManager.write_window(Win, 0, " -----------------------------------\n");
 }

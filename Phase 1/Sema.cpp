@@ -23,7 +23,7 @@ void Semaphore::down(int task_id)
 
     if (task_id == lucky_task)
     {
-        std::cout << "Task # " << lucky_task << " already has the resource! Ignore request." << std::endl;
+        // std::cout << "Task # " << lucky_task << " already has the resource! Ignore request." << std::endl;
         dump();
     }
     else
@@ -54,7 +54,7 @@ void Semaphore::up()
 
     int task_id;
 
-    std::cout << "TaskID: " << sched_ptr->get_task_id() << ", LuckyID: " << lucky_task << std::endl;
+    // std::cout << "TaskID: " << sched_ptr->get_task_id() << ", LuckyID: " << lucky_task << std::endl;
 
     if (sched_ptr->get_task_id() == lucky_task)
     {
@@ -68,7 +68,7 @@ void Semaphore::up()
         {
             task_id = sema_queue.dequeue();
             sched_ptr->set_state(task_id, READY);
-            std::cout << "UnBlock: " << task_id << " and release from the queue" << std::endl;
+            // std::cout << "UnBlock: " << task_id << " and release from the queue" << std::endl;
             dump();
             sched_ptr->yield();
             dump();
@@ -76,9 +76,9 @@ void Semaphore::up()
     }
     else
     {
-        std::cout << "Invalid Semaphore UP(). TaskID: "
-            << sched_ptr->get_task_id()
-            << " does not own the resource" << std::endl;
+        // std::cout << "Invalid Semaphore UP(). TaskID: "
+        //     << sched_ptr->get_task_id()
+        //     << " does not own the resource" << std::endl;
         
         dump();
     }
@@ -88,6 +88,7 @@ void Semaphore::up()
 
 void Semaphore::dump(int level)
 {
+    return;
     std::cout << "---------- SEMAPHORE DUMP ----------" << std::endl;
     if (level == 0)
     {
