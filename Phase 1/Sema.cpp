@@ -19,6 +19,8 @@ Semaphore::~Semaphore()
 
 void Semaphore::down(int task_id)
 {
+    pthread_mutex_lock(&lock);
+
     if (task_id == lucky_task)
     {
         std::cout << "Task # " << lucky_task << " already has the resource! Ignore request." << std::endl;
@@ -35,18 +37,20 @@ void Semaphore::down(int task_id)
         else
         {
             sema_queue.enqueue(task_id);
-            sched_ptr.set_state(task_id, BLOCKED);
+            sched_ptr->set_state(task_id, BLOCKED);
             dump();
 
             sched_ptr->yield();
             dump();
         }
     }
+
+    pthread_mutex_unlock(&lock);
 }
 
 void Semaphore::up()
 {
-    // pthread_mutex_lock(&lock);
+    pthread_mutex_lock(&lock);
 
     int task_id;
 
@@ -79,7 +83,7 @@ void Semaphore::up()
         dump();
     }
 
-    // pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&lock);
 }
 
 void Semaphore::dump(int level)
