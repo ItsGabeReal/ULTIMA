@@ -19,6 +19,16 @@ using namespace std;
 #define MAIN_THREAD_ID 0
 
 //--------------------------------------------------------
+// Forward declaration
+//--------------------------------------------------------
+void display_help(WINDOW *Win);
+//--------------------------------------------------------
+void *perform_simple_output(void *arguments);
+void *perform_cpu_work(void *arguments);
+void *perform_io_work(void *arguments);
+//--------------------------------------------------------
+
+//--------------------------------------------------------
 // State information for each thread.
 // Mostly used in the future, but right now, every thread
 // will have a RUNNING state until, we the user kills them
@@ -30,17 +40,6 @@ using namespace std;
 // const int RUNNING 	= 2;
 // const int BLOCKED	= 3;
 // const int TERMINATED	= 4;
-
-//--------------------------------------------------------
-// Forward declaration
-//--------------------------------------------------------
-void display_help(WINDOW *Win);
-//--------------------------------------------------------
-void *perform_simple_output(void *arguments);
-void *perform_cpu_work(void *arguments);
-void *perform_io_work(void *arguments);
-//--------------------------------------------------------
-
 Scheduler scheduler;
 WindowManager wManager(MAIN_THREAD_ID, &scheduler);
 
@@ -61,42 +60,6 @@ struct thread_data
 };
 
 //--------------------------------------------------------
-// This utility function simply extracts the Width and Height
-// of the stdscr, and displays it.
-//
-// In addition to the screen geometry, we also extract the
-// current cursor's Y,X coordinates and display them.
-//
-// Finally, this function shows how we can use colors in
-// nCurses using functions such as start_color(), init_pair(),
-// attron(), attroff()
-
-// void display_screen_data()
-// {
-//     int Y, X;
-//     int Max_Y, Max_X;
-
-//     start_color();
-//     // Define color pairs: (pair_number, foreground, background)
-//     init_pair(1, COLOR_RED, COLOR_BLACK);
-//     init_pair(2, COLOR_GREEN, COLOR_BLACK);
-
-//     pthread_mutex_lock(&myMutex);
-//     attron(COLOR_PAIR(1));          // Use color pair 1
-//     getmaxyx(stdscr, Max_Y, Max_X); // Get screen size
-//     wprintw(stdscr, "Initial Screen Height = %d, Initial Screen Width = %d\n", Max_Y, Max_X);
-//     attroff(COLOR_PAIR(1));
-//     pthread_mutex_unlock(&myMutex);
-
-//     pthread_mutex_lock(&myMutex);
-//     attron(COLOR_PAIR(2)); // Use color pair 2
-//     getyx(stdscr, Y, X);   // Get current Y, X coordinate of the cursor
-//     wprintw(stdscr, "Current Y = %d, Current X = %d\n", Y, X);
-//     attroff(COLOR_PAIR(2));
-
-//     refresh();
-//     pthread_mutex_unlock(&myMutex);
-// }
 
 void display_help(WINDOW *Win)
 {
@@ -130,11 +93,11 @@ void *perform_simple_output(void *arguments)
 
     while (!td->kill_signal)
     {
-        wManager.write_window(Win, MAIN_THREAD_ID, " Task-" + std::to_string(thread_no) + " running #" + std::to_string(CPU_Quantum++) + "\n");
+        wManager.write_window(Win, thread_no, " Task-" + std::to_string(thread_no) + " running #" + std::to_string(CPU_Quantum++) + "\n");
         sleep(thread_no * 2);
     }
     td->thread_state = DEAD;
-    wManager.write_window(Win, MAIN_THREAD_ID, " TERMINATED");
+    wManager.write_window(Win, thread_no, " TERMINATED");
     return (NULL);
 }
 
@@ -152,17 +115,17 @@ void *perform_io_work(void *arguments)
     // do some I/O, notice that we may get an interrupt during
     // one or more of these I/O operations!
 
-    wManager.write_window(Win, MAIN_THREAD_ID, " T-" + std::to_string(thread_no) + " Started\n");
+    wManager.write_window(Win, thread_no, " T-" + std::to_string(thread_no) + " Started\n");
 
-    wManager.write_window(Win, MAIN_THREAD_ID, " Sleeping for " + std::to_string(sleep_time) + " seconds\n");
+    wManager.write_window(Win, thread_no, " Sleeping for " + std::to_string(sleep_time) + " seconds\n");
     sleep(sleep_time);
 
-    wManager.write_window(Win, MAIN_THREAD_ID, " T-" + std::to_string(thread_no) + " Results = " + std::to_string(td->thread_results) + "\n");
+    wManager.write_window(Win, thread_no, " T-" + std::to_string(thread_no) + " Results = " + std::to_string(td->thread_results) + "\n");
 
-    wManager.write_window(Win, MAIN_THREAD_ID, " T-" + std::to_string(thread_no) + " Finished its work\n");
+    wManager.write_window(Win, thread_no, " T-" + std::to_string(thread_no) + " Finished its work\n");
 
     td->thread_state = DEAD;
-    wManager.write_window(Win, MAIN_THREAD_ID, " TERMINATED");
+    wManager.write_window(Win, thread_no, " TERMINATED");
 
     return (NULL);
 }
@@ -186,19 +149,17 @@ void *perform_cpu_work(void *arguments)
         srand(time(NULL)); // init random seed
         td->thread_results += i * (rand() % 10);
         sprintf(buff, " T-%d Result=%d\n", thread_no, td->thread_results);
-        wManager.write_window(Win, MAIN_THREAD_ID, buff);
+        wManager.write_window(Win, thread_no, buff);
         sleep(thread_no * 2);
     }
 
     td->thread_state = DEAD;
-    wManager.write_window(Win, MAIN_THREAD_ID, " TERMINATED");
+    wManager.write_window(Win, thread_no, " TERMINATED");
     return (NULL);
 }
 
 int main()
 {
-    
-
     //------------------------------------------------------------------------------
     // Create the Thread variables    
     pthread_t thread_1, thread_2, thread_3; // Not sure if we will use these with scheduler

@@ -20,7 +20,7 @@
 class WindowManager
 {
 private:
-    Semaphore window_lock;
+    Semaphore window_lock; // Prevents multiple threads from exiting windows at the same time
 
     WINDOW* Log_Win;
 
@@ -28,7 +28,6 @@ private:
 
     void display_screen_data();
 
-    void display_help(WINDOW *Win);
 public:
 
     WindowManager(int main_thread_id, Scheduler* scheduler);
@@ -69,6 +68,11 @@ public:
      */
     void clear_window(WINDOW *Win, int thread_id);
 
+    /**
+     * Prints message to the log window.
+     * 
+     * @param message Message to be printed
+     */
     void log(std::string message);
 };
 #endif
