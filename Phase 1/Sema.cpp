@@ -94,7 +94,7 @@ void Semaphore::up()
 
 void Semaphore::dump(int level)
 {
-    // return;
+    return;
     std::cout << "---------- SEMAPHORE DUMP ----------" << std::endl;
     if (level == 0)
     {
