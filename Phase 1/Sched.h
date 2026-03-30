@@ -75,6 +75,26 @@ public:
     TCB *get_tcb_pointer(int task_id);
 
     /**
+     * Sets the state of the specified task to the given state.
+     * 
+     * @param task_id Id of the task to change state.
+     * @param new_state State the task will change to.
+     */
+    void set_state(int task_id, std::string new_state);
+
+    /**
+     * Gets the state of the specified task.
+     * 
+     * @param task_id Id of the specified task.
+     */
+    std::string get_state(int task_id);
+
+    /**
+     * Gets the current task id for the Scheduler.
+     */
+    int get_task_id();
+
+    /**
      * Kills the specified task.
      * 
      * @param task_id Id of the task to be killed.

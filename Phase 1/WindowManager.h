@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <string>
 #include "Sema.h"
+#include "Sched.h"
 
 class WindowManager
 {

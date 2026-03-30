@@ -41,6 +41,23 @@ TCB *Scheduler::get_tcb_pointer(int task_id)
     return nullptr;
 }
 
+void Scheduler::set_state(int task_id, std::string new_state)
+{
+    TCB *t = get_tcb_pointer(task_id);
+    t->state = new_state;
+}
+
+std::string Scheduler::get_state(int task_id)
+{
+    TCB *t = get_tcb_pointer(task_id);
+    return t->state;
+}
+
+int Scheduler::get_task_id()
+{
+    return current_task;
+}
+
 void Scheduler::kill_task(int task_id)
 {
     TCB *t = get_tcb_pointer(task_id);
