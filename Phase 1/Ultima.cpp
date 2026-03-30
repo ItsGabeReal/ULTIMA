@@ -276,6 +276,9 @@ int main()
 
     //------------------------------------------------------------------------------
     wManager.log(" All threads have been created...\n");
+    
+    wManager.log(" Starting scheduler...\n");
+    scheduler.start();
 
     //------------------------------------------------------------------------------
     // Set up keyboard I/O processing

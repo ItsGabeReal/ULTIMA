@@ -37,10 +37,16 @@ void Semaphore::down(int task_id)
         else
         {
             sema_queue.enqueue(task_id);
-            sched_ptr->set_state(task_id, BLOCKED);
+            // sched_ptr->set_state(task_id, BLOCKED);
             dump();
 
-            sched_ptr->yield();
+            do
+            {
+                pthread_cond_wait(&cond, &lock);
+            } while (sema_value < 0);
+            
+            // sched_ptr->yield();
+            
             dump();
         }
     }
@@ -56,7 +62,8 @@ void Semaphore::up()
 
     // std::cout << "TaskID: " << sched_ptr->get_task_id() << ", LuckyID: " << lucky_task << std::endl;
 
-    if (sched_ptr->get_task_id() == lucky_task)
+    // if (sched_ptr->get_task_id() == lucky_task)
+    if (true)
     {
         if (sema_queue.is_empty())
         {
@@ -67,10 +74,9 @@ void Semaphore::up()
         else
         {
             task_id = sema_queue.dequeue();
-            sched_ptr->set_state(task_id, READY);
+            // sched_ptr->set_state(task_id, READY);
             // std::cout << "UnBlock: " << task_id << " and release from the queue" << std::endl;
-            dump();
-            sched_ptr->yield();
+            // sched_ptr->yield();
             dump();
         }
     }
