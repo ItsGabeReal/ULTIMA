@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <string>
+#include <sstream>
 #include "Queue.h"
 #include "Sched.h"
 
@@ -24,11 +25,11 @@ class Semaphore
 private:
     std::string resource_name; // Name of this semaphore
     int sema_value;
-    Queue sema_queue;
+    Queue sema_queue; // List of tasks waiting to access resource
     Scheduler* sched_ptr;
-    pthread_mutex_t lock;
-    pthread_cond_t cond;
-    int lucky_task;
+    pthread_mutex_t lock; // Prevent simultaneous access of sema_value and sema_queue
+    pthread_cond_t cond; // Handles thread blocking and waking
+    int lucky_task; // ID of the task that's currently accessing the resource
 
 public:
     /**
@@ -58,11 +59,12 @@ public:
     void up();
 
     /**
-     * Prints details to the console, including 
+     * Returns a string with semaphore details.
      * 
-     * @param level Specifies the amount of information printed (Default: 2).
+     * @param level Specifies the amount of information printed (Default: 1).
+     * @returns Multi-line string with dump information.
      */
-    void dump(int level = 1);
+    std::string dump(int level = 1) const;
 };
 
 #endif

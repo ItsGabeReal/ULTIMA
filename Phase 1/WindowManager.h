@@ -74,5 +74,10 @@ public:
      * @param message Message to be printed
      */
     void log(std::string message);
+
+    /**
+     * Returns a read-only reference to the window semaphore.
+     */
+    const Semaphore& get_window_lock() { return window_lock; }
 };
 #endif

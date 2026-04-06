@@ -62,6 +62,6 @@ public:
      * Returns a string in the form "value1 -> value2 -> ... -> valueN", where
      * value1 is the head, and valueN is the tail.
      */
-    std::string to_string();
+    std::string to_string() const;
 };
 

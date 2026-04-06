@@ -11,12 +11,26 @@
 #define SCHEDULER_H
 
 #include <string>
+#include <sstream>
 #include <format>
 #include <iostream>
 #include <iomanip>
 #include <pthread.h>
 #include <unistd.h>
 #include <assert.h>
+
+//--------------------------------------------------------
+// State information for each thread.
+// Mostly used in the future, but right now, every thread
+// will have a RUNNING state until, we the user kills them
+// either by specifically killing a thread number,
+// or by quitting the program and killing all the threads.
+
+// const int STARTED	= 0;
+// const int READY		= 1;
+// const int RUNNING 	= 2;
+// const int BLOCKED	= 3;
+// const int TERMINATED	= 4;
 
 const std::string READY = "READY";
 const std::string RUNNING = "RUNNING";
@@ -63,6 +77,7 @@ public:
      * @param task_name Name of the task being created.
      * @param task_function Function that the task will execute.
      * @param args Additional arguments for the task.
+     * @returns Thread ID for the newly created task
      */
     int create_task(std::string task_name, void *(*task_function)(void *), void *args);
 
@@ -121,6 +136,6 @@ public:
      * @param Win Window to output the dump
      * @param level Amount of detail shown (Default: 2)
      */
-    void dump(int level = 2);
+    std::string dump(int level = 2);
 };
 #endif

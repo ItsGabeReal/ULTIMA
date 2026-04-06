@@ -119,28 +119,30 @@ void Scheduler::yield()
 }
 
 
-void Scheduler::dump(int level)
+std::string Scheduler::dump(int level)
 {
-    return;
+    std::stringstream str;
+
     if (level != 1 && level != 2) // If not expected level, print error and exit
     {
-        std::cerr << level << " is an invalid level" << std::endl;
-        return;
+        str << level << " is an invalid level" << std::endl;
+        return str.str();
     }
-    // wManager.clear_window(Win, 0);
-    // wManager.write_window(Win, 0, 1, 0, " -----------Process Table-----------\n");
-    // wManager.write_window(Win, 0, " Name\tID\tState\tStart\n");
-    // wManager.write_window(Win, 0, " -----------------------------------\n");
+    str << " -----------Process Table-----------\n";
+    str << " Name\tID\tState\tStart\n";
+    str << " -----------------------------------\n";
 
     TCB *current_task = process_table;
     int count = 0;
     while (current_task != nullptr)
     {
-        // wManager.write_window(Win, 0, " " + current_task->task_name + "\t" + std::to_string(current_task->task_id) + "\t" + current_task->state + "\t" + std::to_string(current_task->start_time) + "\n");
+        str << " " << current_task->task_name << "\t" << std::to_string(current_task->task_id) << "\t" << current_task->state << "\t" << std::to_string(current_task->start_time) << "\n";
 
         current_task = current_task->next;
         count++;
     }
 
-    // wManager.write_window(Win, 0, " -----------------------------------\n");
+    str << " -----------------------------------\n";
+
+    return str.str();
 }

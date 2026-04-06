@@ -76,7 +76,7 @@ bool Queue::is_empty()
     return head == nullptr;
 }
 
-std::string Queue::to_string()
+std::string Queue::to_string() const
 {
     std::stringstream str;
 

@@ -10,7 +10,7 @@ WindowManager::WindowManager(int main_thread_id, Scheduler* scheduler)
 
     //-----------------------Log Window---------------------------------------------
     //
-    Log_Win = create_window(DEFAULT_THREAD_ID, 10, 60, 30, 2);
+    Log_Win = create_window(DEFAULT_THREAD_ID, 12, 60, 30, 2);
     write_window(Log_Win, DEFAULT_THREAD_ID, 1, 5, " .....Log Window.....\n");
     write_window(Log_Win, DEFAULT_THREAD_ID, " ..........Main program started..........\n");
 }

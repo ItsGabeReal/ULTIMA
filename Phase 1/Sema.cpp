@@ -23,8 +23,7 @@ void Semaphore::down(int task_id)
 
     if (task_id == lucky_task)
     {
-        // std::cout << "Task # " << lucky_task << " already has the resource! Ignore request." << std::endl;
-        dump();
+        // This task already has the resource, so do nothing
     }
     else
     {
@@ -32,13 +31,11 @@ void Semaphore::down(int task_id)
         {
             --sema_value;
             lucky_task = task_id;
-            dump();
         }
         else
         {
             sema_queue.enqueue(task_id);
             sched_ptr->set_state(task_id, BLOCKED);
-            dump();
 
             do
             {
@@ -46,8 +43,6 @@ void Semaphore::down(int task_id)
             } while (sema_value < 0);
             
             sched_ptr->yield();
-            
-            dump();
         }
     }
 
@@ -92,23 +87,25 @@ void Semaphore::up()
     pthread_mutex_unlock(&lock);
 }
 
-void Semaphore::dump(int level)
+std::string Semaphore::dump(int level) const
 {
-    return;
-    std::cout << "---------- SEMAPHORE DUMP ----------" << std::endl;
+    std::stringstream str;
+    str << " ---------- SEMAPHORE DUMP ----------" << std::endl;
     if (level == 0)
     {
-        std::cout << "Sema_Value: " << sema_value << std::endl;
-        std::cout << "Sema_Name: " << resource_name << std::endl;
-        std::cout << "Obtained by Task-ID: " << lucky_task << std::endl;
+        str << " Sema_Value: " << sema_value << std::endl;
+        str << " Sema_Name: " << resource_name << std::endl;
+        str << " Obtained by Task-ID: " << lucky_task << std::endl;
     }
     else if (level == 1)
     {
-        std::cout << "Sema_Value: " << sema_value << std::endl;
-        std::cout << "Sema_Name: " << resource_name << std::endl;
-        std::cout << "Obtained by Task-ID: " << lucky_task << std::endl;
-        std::cout << "Sema_Queue: " << sema_queue.to_string() << std::endl;
+        str << " Sema_Value: " << sema_value << std::endl;
+        str << " Sema_Name: " << resource_name << std::endl;
+        str << " Obtained by Task-ID: " << lucky_task << std::endl;
+        str << " Sema_Queue: " << sema_queue.to_string() << std::endl;
     }
     else
-        std::cerr << level << " is an invalid semaphore dump level" << std::endl;
+        str << " " << level << " is an invalid semaphore dump level" << std::endl;
+    
+    return str.str();
 }
