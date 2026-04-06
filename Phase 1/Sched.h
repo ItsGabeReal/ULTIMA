@@ -18,6 +18,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <assert.h>
+#include "Log.h"
 
 //--------------------------------------------------------
 // State information for each thread.
@@ -55,10 +56,11 @@ struct TCB
 class Scheduler
 {
 private:
-    TCB *process_table;
+    TCB *process_table; // Pointer to the head of the process table linked list
     int current_task;
     long current_quantum;
     int next_available_id;
+    pthread_mutex_t lock; // Prevent multiple threads from making changes simultaneously
 
 public:
     /**
@@ -130,12 +132,26 @@ public:
     void garbage_collect();
 
     /**
+     * Halts the calling thread until all threads in the process table have
+     * completed.
+     */
+    void wait_for_all_threads();
+
+    /**
      * Prints the process table with various info about the current state of all tasks.
      * Use the level parameter to change how much detail is given.
      * 
-     * @param Win Window to output the dump
      * @param level Amount of detail shown (Default: 2)
      */
     std::string dump(int level = 2);
+
+private:
+    /**
+     * Looks for another READY task to switch to. If a task is found, the current
+     * task will be changed to READY and the next task will become RUNNING.
+     * 
+     * @returns True if the current task was successfully switched.
+     */
+    bool try_switch_task();
 };
 #endif

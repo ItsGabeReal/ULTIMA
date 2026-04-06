@@ -19,6 +19,7 @@
 #include <sstream>
 #include "Queue.h"
 #include "Sched.h"
+#include "Log.h"
 
 class Semaphore
 {

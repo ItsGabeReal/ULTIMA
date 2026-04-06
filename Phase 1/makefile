@@ -14,7 +14,7 @@ Ultima: $(OBJS)
 	g++ $^ -o $@ -lncurses
 
 # Compile every .cpp file, storing them in a build folder
-build/%.o: %.cpp | build
+build/%.o: %.cpp Log.h | build
 	g++ -c $< -o $@
 
 # Create build folder if it doesn't exist

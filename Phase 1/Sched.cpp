@@ -10,7 +10,7 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 {
-    std::cout << "Exiting Scheduler....." << std::endl;
+    LOG("Exiting Scheduler....." << std::endl);
 }
 
 int Scheduler::create_task(std::string task_name, void *(*task_function)(void *), void *args)
@@ -20,11 +20,14 @@ int Scheduler::create_task(std::string task_name, void *(*task_function)(void *)
     new_task->task_id = next_available_id++;
     new_task->task_name = task_name;
     new_task->state = READY;
-    // new_task->start_time = clock();
+    
+    pthread_mutex_lock(&lock);
     new_task->next = process_table;
     process_table = new_task;
+    pthread_mutex_unlock(&lock);
 
     int result = pthread_create(&(new_task->thread), nullptr, task_function, args);
+
     assert(!result); // if there are any problems with result, display it and end program.
 
     return new_task->task_id;
@@ -55,7 +58,19 @@ TCB *Scheduler::get_tcb_pointer(int task_id)
 void Scheduler::set_state(int task_id, std::string new_state)
 {
     TCB *t = get_tcb_pointer(task_id);
+    std::string old_state = t->state;
+
+    pthread_mutex_lock(&lock);
+
     t->state = new_state;
+
+    LOG("task_id="<<task_id<<": " << old_state << " -> " << new_state << std::endl);
+
+    // The current task is no longer running. Switch to another one.
+    if (old_state == RUNNING && new_state != RUNNING)
+        try_switch_task();
+
+    pthread_mutex_unlock(&lock);
 }
 
 std::string Scheduler::get_state(int task_id)
@@ -72,52 +87,43 @@ int Scheduler::get_task_id()
 void Scheduler::kill_task(int task_id)
 {
     TCB *t = get_tcb_pointer(task_id);
+
+    pthread_mutex_lock(&lock);
     t->state = DEAD;
+    pthread_mutex_unlock(&lock);
 }
 
 void Scheduler::yield()
 {
-    int counter = 0;
-    // wManager.log("Current Task # " + std::to_string(current_task) + " is trying to Yield\n");
+    TCB *running_task = get_tcb_pointer(current_task);
 
-    // Calculate elapsed_time since the task last started to run.
-    clock_t elapsed_time = clock() - get_tcb_pointer(current_task)->start_time;
-    // wManager.log("Task: " + std::to_string(current_task) + ", Elapsed time: " + std::to_string(elapsed_time) + "\n");
-    // wManager.log("Current Quantum: " + std::to_string(current_quantum) + "\n");
-
-    if (elapsed_time < current_quantum) 
+    if (running_task == nullptr)
     {
-        // wManager.log("NO Yield!   (task: " + std::to_string(current_task) + " still has some quantum left)\n");
+        LOG("Running task not found" << std::endl);
         return;
     }
 
-    // wManager.log("Yielding.... (Switching from task #" + std::to_string(current_task) + " to next ready task)");
+    pthread_mutex_lock(&lock);
+
+    // Calculate elapsed_time since the task last started to run.
+    clock_t elapsed_time = clock() - running_task->start_time;
 
     // If current task is RUNNING we change its state to READY
-    TCB *running_task = get_tcb_pointer(current_task);
-    if (running_task != nullptr && running_task->state == RUNNING)
-        running_task->state = READY;
+    if (elapsed_time >= current_quantum)
+        try_switch_task();
 
-    // Find the next READY task and make it RUNNING
-    current_task = (current_task % MAX_TASKS) + 1;
-    while (get_tcb_pointer(current_task)->state != READY && counter < MAX_TASKS)
-    {
-        current_task = (current_task % MAX_TASKS) + 1;
-        counter++;
-    }
-
-    // If we find a READY task, start it. If not, possible DEAD LOCK situtation
-    TCB *found_task = get_tcb_pointer(current_task);
-    if (counter < MAX_TASKS && found_task->state == READY)
-    {
-        found_task->start_time = clock();
-        found_task->state = RUNNING;
-        // wManager.log("Started running task # " + std::to_string(current_task) + "\n");
-    }
-    else {}
-        // wManager.log("POSSIBLE DEAD LOCK");
+    pthread_mutex_unlock(&lock);
 }
 
+void Scheduler::wait_for_all_threads()
+{
+    TCB *t = process_table;
+    while (t != nullptr)
+    {
+        pthread_join(t->thread, NULL);
+        t = t->next;
+    }
+}
 
 std::string Scheduler::dump(int level)
 {
@@ -142,7 +148,49 @@ std::string Scheduler::dump(int level)
         count++;
     }
 
-    str << " -----------------------------------\n";
+    str << " -----------------------------------";
 
     return str.str();
+}
+
+bool Scheduler::try_switch_task()
+{
+    // Note: This function assumes pthread_mutex_lock(&lock); has already been
+    // called.
+
+    // Loop through every task in the process table until the original task is
+    // reached again
+    TCB *t = get_tcb_pointer(current_task);
+    t = t->next;
+    if (t == nullptr)
+        t = process_table;
+    while (t->task_id != current_task)
+    {
+        if (t->state == READY)
+        {
+            // Another ready task is found
+            TCB* current = get_tcb_pointer(current_task);
+            if (current->state == RUNNING)
+            {
+                LOG("task_id="<<current->task_id<<": " << current->state << " -> " << READY << std::endl);
+                current->state = READY;
+            }
+
+            current_task = t->task_id;
+            LOG("task_id="<<current_task<<": " << t->state << " -> " << RUNNING << std::endl);
+            t->state = RUNNING;
+            t->start_time = clock();
+
+            LOG("Task switched\n" << dump() << std::endl << std::endl);
+            return true;
+        }
+
+        // Advance task pointer
+        t = t->next;
+        if (t == nullptr)
+            t = process_table;
+    }
+
+    LOG("try_switch_task(): No other task found" << std::endl << std::endl);
+    return false;
 }
