@@ -1,9 +1,10 @@
 /**
  * UnitTest.cpp
  * 
- * For testing the functionality of individual components.
+ * For testing the functionality of individual components. Run `make test` to
+ * compile/execute this file.
  * 
- * Run `make test` to compile/execute this file.
+ * Note: To enable debug messages, set DEBUG to 1 in Log.h
  */
 
 #include <iostream>
@@ -14,6 +15,7 @@
 
 // Forward Declarations
 void* worker(void* arg);
+void simulate_work(int amount);
 
 /**
  * Data Structure for each thread.
@@ -35,6 +37,10 @@ Semaphore sem("Test resource", &scheduler, 1);
 
 int main()
 {
+    // Reduce the amount of work each task can do at a time (this may need to be
+    // fine-tuned depending on the machine it's run on).
+    scheduler.set_quantum(10000);
+
     std::cout << "Starting unit test for Semaphore and Scheduler\n\n";
 
     // Create multiple tasks, and add them to the scheduler
@@ -66,7 +72,7 @@ int main()
 
 void* worker(void* arg)
 {
-    const int WORK_AMOUNT = 400'000;
+    const int WORK_AMOUNT = 10;
     int work_done = 0;
     thread_data *td = (thread_data *)arg;
 
@@ -80,11 +86,7 @@ void* worker(void* arg)
     std::cout << " -------------------- Task " << td->thread_no << " Started --------------------\n";
     
     // Try to claim resource
-    std::cout << "TaskID=" << td->task_id << ": Before down()\n"
-        << sem.dump() << std::endl << std::endl;
     sem.down(td->task_id);
-    std::cout << "TaskID=" << td->task_id << ": After down()\n"
-        << sem.dump() << std::endl << std::endl;
 
 
     // Do work while yielding to the scheduler
@@ -92,8 +94,8 @@ void* worker(void* arg)
     {
         // Simulate doing work
         std::cout << "TaskID=" << td->task_id << ": Doing work (" << (float(work_done)/WORK_AMOUNT)*100 << "%)" << std::endl;
-        for (int i = 0; i < 20000; ++i)
-            ++work_done;
+        simulate_work(1000000);
+        ++work_done;
         
         // Let the scheduler decide if we should pause or not
         scheduler.yield();
@@ -102,14 +104,23 @@ void* worker(void* arg)
     }
 
     // Release resource
-    std::cout << "TaskID=" << td->task_id << ": Before up()\n"
-        << sem.dump() << std::endl << std::endl;
-    sem.up();
-    std::cout << "TaskID=" << td->task_id << ": After up()\n"
-        << sem.dump() << std::endl << std::endl;
+    sem.up(td->task_id);
 
     std::cout << " -------------------- Task " << td->thread_no << " Finished --------------------\n\n";
 
     scheduler.set_state(td->task_id, DEAD);
     return nullptr;
+}
+
+/**
+ * Wastes CPU time.
+ */
+void simulate_work(int amount)
+{
+    int counter = 0;
+    for (int i = 0; i < amount; ++i)
+    {
+        ++counter;
+    }
+    usleep(100000);
 }

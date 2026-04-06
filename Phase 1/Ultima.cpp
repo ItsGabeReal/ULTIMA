@@ -1,5 +1,10 @@
-// Code mostly from Lab 7 to get UI started
-// Definitely can use organizing into separate files (We need Ultima.h)
+/**
+ * Ultima.cpp
+ * 
+ * Entry-pont for the ULTIMA operating system. Use `make run` to execute it.
+ * 
+ * Note: To disable debug messages, set DEBUG to 0 in Log.h
+ */
 
 #include <iostream>
 #include <pthread.h>
@@ -26,9 +31,7 @@ using namespace std;
 struct thread_data
 {
     int thread_no;
-    std::string thread_state;
     WINDOW *thread_win;
-    bool kill_signal;
     int sleep_time;
     int thread_results;
     int task_id; // ID assigned to this task once created
@@ -43,6 +46,7 @@ void create_tasks(thread_data &args_1, thread_data &args_2, thread_data &args_3)
 void *perform_simple_output(void *arguments);
 void *perform_cpu_work(void *arguments);
 void *perform_io_work(void *arguments);
+void simulate_work(int amount);
 //--------------------------------------------------------
 
 // Initialize scheduler and window manager as global variables (we might change 
@@ -72,15 +76,12 @@ int main()
 
     // Thread 1
     thread_args_1.thread_win = wManager.create_window(MAIN_TID, 15, 25, 15, 2);
-    wManager.write_window(thread_args_1.thread_win, MAIN_TID, 6, 1, "Starting Thread 1.....\n");
 
     // Thread 2
     thread_args_2.thread_win = wManager.create_window(MAIN_TID, 15, 25, 15, 30);
-    wManager.write_window(thread_args_2.thread_win, MAIN_TID, 6, 1, "Starting Thread 2.....\n");
 
     // Thread 3
     thread_args_3.thread_win = wManager.create_window(MAIN_TID, 15, 25, 15, 57);
-    wManager.write_window(thread_args_3.thread_win, MAIN_TID, 6, 1, "Starting Thread 3.....\n");
 
     //----------------------- Run Tasks ------------------------
 
@@ -114,11 +115,11 @@ int main()
         case '3':
             // Kill a certain task
             if (input == '1')
-                thread_args_1.kill_signal = true;
+                scheduler.kill_task(thread_args_1.task_id);
             else if (input == '2')
-                thread_args_2.kill_signal = true;
+                scheduler.kill_task(thread_args_2.task_id);
             else if (input == '3')
-                thread_args_3.kill_signal = true;
+                scheduler.kill_task(thread_args_3.task_id);
 
             sprintf(buff, " %c\n", input);
             wManager.write_window(Console_Win, MAIN_TID, buff);
@@ -145,15 +146,15 @@ int main()
             wManager.log(" Quitting the main program....\n");
             wManager.log(" Signal the remaining child processes to stop as well.\n");
 
-            thread_args_1.kill_signal = true;
-            thread_args_2.kill_signal = true;
-            thread_args_3.kill_signal = true;
+            scheduler.kill_task(thread_args_1.task_id);
+            scheduler.kill_task(thread_args_2.task_id);
+            scheduler.kill_task(thread_args_3.task_id);
             break;
         case 's':
-            wManager.write_window(Dump_Win, MAIN_TID, scheduler.dump());
+            wManager.write_window(Dump_Win, MAIN_TID, scheduler.dump()+'\n');
             break;
         case 'm':
-            wManager.write_window(Dump_Win, MAIN_TID, wManager.get_window_lock().dump());
+            wManager.write_window(Dump_Win, MAIN_TID, wManager.get_window_lock().dump()+'\n');
             break;
         case ERR:
             break;
@@ -191,9 +192,9 @@ int main()
     wManager.log(" All threads have now ended.....\n");
     wManager.log(" .........Main program ended........\n");
 
-    wManager.log(" Thread 1 State = " + thread_args_1.thread_state + "\n");
-    wManager.log(" Thread 2 State = " + thread_args_2.thread_state + "\n");
-    wManager.log(" Thread 3 State = " + thread_args_3.thread_state + "\n");
+    wManager.log(" Thread 1 State = " + scheduler.get_state(thread_args_1.task_id) + "\n");
+    wManager.log(" Thread 2 State = " + scheduler.get_state(thread_args_2.task_id) + "\n");
+    wManager.log(" Thread 3 State = " + scheduler.get_state(thread_args_3.task_id) + "\n");
 
     sleep(5);
     // getch();
@@ -246,9 +247,7 @@ void create_tasks(thread_data &args_1, thread_data &args_2, thread_data &args_3)
 
     //----------------------- Thread 1 -----------------------
     args_1.thread_no = 1;
-    args_1.thread_state = RUNNING;
     args_1.sleep_time = 1 + rand() % 3;
-    args_1.kill_signal = false;
     args_1.thread_results = 0;
 
     id = scheduler.create_task("Task1", perform_simple_output, &args_1);
@@ -258,24 +257,20 @@ void create_tasks(thread_data &args_1, thread_data &args_2, thread_data &args_3)
 
     //----------------------- Thread 2 -----------------------
     args_2.thread_no = 2;
-    args_2.thread_state = RUNNING;
     args_2.sleep_time = 1 + rand() % 3;
-    args_2.kill_signal = false;
     args_2.thread_results = 0;
 
-    id = scheduler.create_task("Task2", perform_cpu_work, &args_2);
+    id = scheduler.create_task("Task2", perform_simple_output, &args_2);
     args_2.task_id = id;
 
     wManager.log(" Thread 2 Created.\n");
 
     //----------------------- Thread 3 -----------------------
     args_3.thread_no = 3;
-    args_3.thread_state = RUNNING;
     args_3.sleep_time = 1 + rand() % 3;
-    args_3.kill_signal = false;
     args_3.thread_results = 0;
 
-    id = scheduler.create_task("Task3", perform_cpu_work, &args_3);
+    id = scheduler.create_task("Task3", perform_simple_output, &args_3);
     args_3.task_id = id;
 
     wManager.log(" Thread 3 Created.\n");
@@ -290,20 +285,33 @@ void *perform_simple_output(void *arguments)
     // cast arguments in to thread_data
     thread_data *td = (thread_data *)arguments;
 
+    // Wait until task is ready to run
+    while (scheduler.get_state(td->task_id) != RUNNING)
+        usleep(10000); // Wait 10ms
+
+    // Startup message
+    wManager.write_window(td->thread_win, td->task_id, 6, 1, "Starting Thread "+std::to_string(td->task_id)+"...\n");
+    
     int thread_no = td->thread_no;
     int sleep_time = td->sleep_time;
     WINDOW *Win = td->thread_win;
-    bool kill_signal = td->kill_signal;
-
     int CPU_Quantum = 0;
     char buff[256];
 
-    while (!td->kill_signal)
+    while (scheduler.get_state(td->task_id) != DEAD)
     {
+        // Do some work
         wManager.write_window(Win, thread_no, " Task-" + std::to_string(thread_no) + " running #" + std::to_string(CPU_Quantum++) + "\n");
-        sleep(thread_no * 2);
+        simulate_work(10000);
+
+        // Let the scheduler decide if this task should pause or not
+        scheduler.yield();
+        while (scheduler.get_state(td->task_id) != RUNNING)
+            usleep(10000); // Wait 10ms
     }
-    td->thread_state = DEAD;
+
+    // End the task
+    scheduler.kill_task(td->task_id);
     wManager.write_window(Win, thread_no, " TERMINATED");
     return (NULL);
 }
@@ -319,7 +327,6 @@ void *perform_io_work(void *arguments)
     int thread_no = td->thread_no;
     int sleep_time = td->sleep_time;
     WINDOW *Win = td->thread_win;
-    bool kill_signal = td->kill_signal;
 
     // do some I/O, notice that we may get an interrupt during
     // one or more of these I/O operations!
@@ -333,7 +340,6 @@ void *perform_io_work(void *arguments)
 
     wManager.write_window(Win, thread_no, " T-" + std::to_string(thread_no) + " Finished its work\n");
 
-    td->thread_state = DEAD;
     wManager.write_window(Win, thread_no, " TERMINATED");
 
     return (NULL);
@@ -355,7 +361,7 @@ void *perform_cpu_work(void *arguments)
 
     for (int i = 0; i < 10; i++)
     {
-        if (td->kill_signal == true)
+        if (scheduler.get_state(td->task_id) == DEAD)
             break;
         srand(time(NULL)); // init random seed
         td->thread_results += i * (rand() % 10);
@@ -364,9 +370,20 @@ void *perform_cpu_work(void *arguments)
         sleep(thread_no * 2);
     }
 
-    td->thread_state = DEAD;
+    scheduler.kill_task(td->task_id);
     wManager.write_window(Win, thread_no, " TERMINATED");
     return (NULL);
 }
 
-
+/**
+ * Wastes CPU time.
+ */
+void simulate_work(int amount)
+{
+    int counter = 0;
+    for (int i = 0; i < amount; ++i)
+    {
+        ++counter;
+        usleep(10);
+    }
+}

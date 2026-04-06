@@ -102,6 +102,11 @@ public:
     void set_state(int task_id, std::string new_state);
 
     /**
+     * Sets the amount of CPU time each thread is allowed to use at at time.
+     */
+    void set_quantum(int new_quantum) { current_quantum = new_quantum; }
+
+    /**
      * Gets the state of the specified task.
      * 
      * @param task_id Id of the specified task.

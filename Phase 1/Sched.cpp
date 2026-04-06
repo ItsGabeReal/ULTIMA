@@ -4,7 +4,7 @@ Scheduler::Scheduler()
 {
     process_table = nullptr;    // No processes yet
     current_task = -1;          // No task is running
-    current_quantum = 500;      // Set quantum length to 500ms
+    current_quantum = 10000000 / MAX_TASKS;
     next_available_id = 1;      // Start ids at 1
 }
 
@@ -39,7 +39,7 @@ void Scheduler::start()
     process_table->start_time = clock();
     process_table->state = RUNNING;
     current_task = process_table->task_id;
-    current_quantum = 1000 / MAX_TASKS;
+    
 
     sleep(1);
 }
@@ -86,15 +86,13 @@ int Scheduler::get_task_id()
 
 void Scheduler::kill_task(int task_id)
 {
-    TCB *t = get_tcb_pointer(task_id);
-
-    pthread_mutex_lock(&lock);
-    t->state = DEAD;
-    pthread_mutex_unlock(&lock);
+    set_state(task_id, DEAD);
 }
 
 void Scheduler::yield()
 {
+    pthread_mutex_lock(&lock);
+
     TCB *running_task = get_tcb_pointer(current_task);
 
     if (running_task == nullptr)
@@ -102,8 +100,6 @@ void Scheduler::yield()
         LOG("Running task not found" << std::endl);
         return;
     }
-
-    pthread_mutex_lock(&lock);
 
     // Calculate elapsed_time since the task last started to run.
     clock_t elapsed_time = clock() - running_task->start_time;

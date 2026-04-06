@@ -7,7 +7,8 @@
 
 #pragma once
 
-#define DEBUG 0 // 0 = Disabled | 1 = Enabled
+// 0 = Disabled | 1 = Enabled
+#define DEBUG 0
 #if DEBUG
   #define LOG(x) std::cout << x
 #else

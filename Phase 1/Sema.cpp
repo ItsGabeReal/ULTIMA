@@ -22,11 +22,11 @@ void Semaphore::down(int task_id)
     pthread_mutex_lock(&lock);
 
     if (task_id == lucky_task)
-    {
-        // This task already has the resource, so do nothing
-    }
+        LOG("down() | task_id=" << task_id << ": Ignoring - This task already has the resource." << std::endl);
     else
     {
+        LOG("TaskID=" << task_id << ": Before down()\n" << dump() << std::endl << std::endl);
+    
         if (sema_value >= 1)
         {
             --sema_value;
@@ -52,17 +52,19 @@ void Semaphore::down(int task_id)
             // Mark it as ready
             sched_ptr->set_state(task_id, READY);
         }
+
+        LOG("TaskID=" << task_id << ": After down()\n" << dump() << std::endl << std::endl);
     }
 }
 
-void Semaphore::up()
+void Semaphore::up(int task_id)
 {
     // Make sure the task that currently owns the resource is the task that's
     // currently running in the scheduler.
-    if (sched_ptr->get_task_id() != lucky_task)
+    if (task_id != lucky_task)
     {
         LOG( "Invalid Semaphore UP(). TaskID: "
-            << sched_ptr->get_task_id()
+            << task_id
             << " does not own the resource" << std::endl);
         
         return;

@@ -24,13 +24,21 @@ private:
 
     WINDOW* Log_Win;
 
-    int thread_id; // Thread ID where the window manager is running
+    int main_thread_id; // Thread ID where the window manager is running
 
     void display_screen_data();
 
 public:
 
-    WindowManager(int main_thread_id, Scheduler* scheduler);
+    /**
+     * Initializes the window manager, creates the log window, and prints screen
+     * information.
+     * 
+     * @param thread_id The thread ID of the process that is running the window
+     * manager
+     * @param scheduler Pointer to the scheduler
+     */
+    WindowManager(int thread_id, Scheduler* scheduler);
     ~WindowManager();
 
     /**

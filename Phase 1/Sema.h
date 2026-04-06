@@ -37,10 +37,11 @@ public:
      * Constructor
      * 
      * @param res_name Name of the resource this semaphore regulates.
+     * @param scheduler Pointer to ULTIMA's scheduler.
      * @param initial_value Number of resources available in this semaphore
      * (default: 1).
      */
-    Semaphore(std::string res_name, Scheduler *scheduler, int initial_value);
+    Semaphore(std::string res_name, Scheduler *scheduler, int initial_value = 1);
 
     /**
      * Destructor!!!
@@ -57,7 +58,7 @@ public:
      * Releases usage of the resource. If there are threads on the waitlist, they
      * will resume execution.
      */
-    void up();
+    void up(int task_id);
 
     /**
      * Returns a string with semaphore details.

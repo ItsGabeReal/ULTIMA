@@ -1,23 +1,23 @@
 #include "WindowManager.h"
 
-WindowManager::WindowManager(int main_thread_id, Scheduler* scheduler)
-    : window_lock("Window", scheduler, 100)
+WindowManager::WindowManager(int thread_id, Scheduler* scheduler)
+    : window_lock("Window", scheduler)
 {
-    const int DEFAULT_THREAD_ID = 0;
+    main_thread_id = thread_id;
 
     initscr();             // Start nCurses
     display_screen_data(); // Display the stdscr display geometry
 
-    //-----------------------Log Window---------------------------------------------
-    //
-    Log_Win = create_window(DEFAULT_THREAD_ID, 12, 60, 30, 2);
-    write_window(Log_Win, DEFAULT_THREAD_ID, 1, 5, " .....Log Window.....\n");
-    write_window(Log_Win, DEFAULT_THREAD_ID, " ..........Main program started..........\n");
+    //----------------------- Create Log Window ------------------------
+    Log_Win = create_window(main_thread_id, 12, 60, 30, 2);
+    write_window(Log_Win, main_thread_id, 1, 5, " .....Log Window.....\n");
+    write_window(Log_Win, main_thread_id, " ..........Main program started..........\n");
 }
 
 WindowManager::~WindowManager()
 {
     write_window(Log_Win, 0, "Exiting WindowManager...");
+    endwin();
 }
 
 WINDOW *WindowManager::create_window(int thread_id, int height, int width, int starty, int startx)
@@ -31,7 +31,7 @@ WINDOW *WindowManager::create_window(int thread_id, int height, int width, int s
     box(Win, 0, 0);      // 0, 0 gives default characters for lines
 
     wrefresh(Win); // Draw the window
-    window_lock.up();
+    window_lock.up(thread_id);
     return Win;
 }
 
@@ -42,7 +42,7 @@ void WindowManager::write_window(WINDOW *Win, int thread_id, std::string text)
     box(Win, 0, 0);
 
     wrefresh(Win);
-    window_lock.up();
+    window_lock.up(thread_id);
 }
 
 void WindowManager::write_window(WINDOW *Win, int thread_id, int y, int x, std::string text)
@@ -52,23 +52,19 @@ void WindowManager::write_window(WINDOW *Win, int thread_id, int y, int x, std::
     box(Win, 0, 0);
 
     wrefresh(Win);
-    window_lock.up();
+    window_lock.up(thread_id);
 }
-
-// void WindowManager::dump_window(WINDOW *Win, int thread_id, std::string dump)
-// {
-// }
 
 void WindowManager::clear_window(WINDOW *Win, int thread_id)
 {
     window_lock.down(thread_id);
     wclear(Win);
-    window_lock.up();
+    window_lock.up(thread_id);
 }
 
 void WindowManager::log(std::string message)
 {
-    write_window(Log_Win, thread_id, message);
+    write_window(Log_Win, main_thread_id, message);
 }
 
 void WindowManager::display_screen_data()
@@ -81,7 +77,7 @@ void WindowManager::display_screen_data()
     init_pair(1, COLOR_RED, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
 
-    window_lock.down(thread_id);
+    window_lock.down(main_thread_id);
     attron(COLOR_PAIR(1));          // Use color pair 1
     getmaxyx(stdscr, Max_Y, Max_X); // Get screen size
     wprintw(stdscr, "Initial Screen Height = %d, Initial Screen Width = %d\n", Max_Y, Max_X);
@@ -93,6 +89,6 @@ void WindowManager::display_screen_data()
     attroff(COLOR_PAIR(2));
 
     refresh();
-    window_lock.up();
+    window_lock.up(main_thread_id);
 }
 
