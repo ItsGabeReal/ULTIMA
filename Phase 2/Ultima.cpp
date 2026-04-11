@@ -56,6 +56,8 @@ WindowManager wManager(MAIN_TID, &scheduler);
 
 int main()
 {
+    Semaphore::set_scheduler_ptr(&scheduler); // Initialize scheduler pointer for Semaphore class
+
     thread_data thread_args_1, thread_args_2, thread_args_3;
     int result_code;
     MEVENT event; // Object to handle mouse events

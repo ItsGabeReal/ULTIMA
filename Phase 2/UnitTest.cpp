@@ -33,7 +33,7 @@ struct thread_data
 };
 
 Scheduler scheduler;
-Semaphore sem("Test resource", &scheduler, 1);
+Semaphore sem("Test resource", 1);
 
 int main()
 {

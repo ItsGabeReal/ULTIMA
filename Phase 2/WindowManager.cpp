@@ -1,7 +1,7 @@
 #include "WindowManager.h"
 
 WindowManager::WindowManager(int thread_id, Scheduler* scheduler)
-    : window_lock("Window", scheduler)
+    : window_lock("Window")
 {
     main_thread_id = thread_id;
 

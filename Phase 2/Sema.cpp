@@ -1,11 +1,16 @@
 #include "Sema.h"
 
-Semaphore::Semaphore(std::string res_name, Scheduler *scheduler, int initial_value)
-    : resource_name(res_name), sched_ptr(scheduler), sema_value(initial_value), lucky_task(-1)
+Semaphore::Semaphore(std::string res_name, int initial_value)
+    : resource_name(res_name), sema_value(initial_value), lucky_task(-1)
 {
     // Init lock and condition
     pthread_mutex_init(&lock, nullptr);
     pthread_cond_init(&cond, nullptr);
+}
+
+void Semaphore::set_scheduler_ptr(Scheduler* scheduler)
+{
+    Semaphore::sched_ptr = scheduler;
 }
 
 Semaphore::~Semaphore()

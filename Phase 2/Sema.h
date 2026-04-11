@@ -27,7 +27,7 @@ private:
     std::string resource_name; // Name of this semaphore
     int sema_value;
     Queue<int> sema_queue; // List of tasks waiting to access resource
-    Scheduler* sched_ptr;
+    static Scheduler* sched_ptr;
     pthread_mutex_t lock; // Prevent simultaneous access of sema_value and sema_queue
     pthread_cond_t cond; // Handles thread blocking and waking
     int lucky_task; // ID of the task that's currently accessing the resource
@@ -37,11 +37,18 @@ public:
      * Constructor
      * 
      * @param res_name Name of the resource this semaphore regulates.
-     * @param scheduler Pointer to ULTIMA's scheduler.
      * @param initial_value Number of resources available in this semaphore
      * (default: 1).
      */
-    Semaphore(std::string res_name, Scheduler *scheduler, int initial_value = 1);
+    Semaphore(std::string res_name, int initial_value = 1);
+
+    /**
+     * Sets static sched_ptr to the address of the scheduler object.
+     * Should only be called by Ultima.cpp.
+     * 
+     * @param scheduler Pointer to the scheduler object.
+     */
+    void static set_scheduler_ptr(Scheduler* scheduler);
 
     /**
      * Destructor!!!
