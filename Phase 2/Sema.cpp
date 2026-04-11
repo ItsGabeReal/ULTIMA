@@ -1,5 +1,7 @@
 #include "Sema.h"
 
+Scheduler* Semaphore::sched_ptr = nullptr;
+
 Semaphore::Semaphore(std::string res_name, int initial_value)
     : resource_name(res_name), sema_value(initial_value), lucky_task(-1)
 {
