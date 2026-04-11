@@ -41,6 +41,8 @@ int main()
     // fine-tuned depending on the machine it's run on).
     scheduler.set_quantum(10000);
 
+    Semaphore::set_scheduler_ptr(&scheduler); // Initialize scheduler pointer for Semaphore class
+
     std::cout << "Starting unit test for Semaphore and Scheduler\n\n";
 
     // Create multiple tasks, and add them to the scheduler

@@ -44,7 +44,7 @@ public:
 
     /**
      * Sets static sched_ptr to the address of the scheduler object.
-     * Should only be called by Ultima.cpp.
+     * Should only be called by Ultima.cpp or UnitTest.cpp.
      * 
      * @param scheduler Pointer to the scheduler object.
      */
