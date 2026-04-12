@@ -55,6 +55,7 @@ void simulate_work(int amount);
 Scheduler scheduler;
 WindowManager wManager(MAIN_TID, &scheduler);
 IPC ipc(MAX_TASKS);
+bool tasks_paused = false;
 
 int main()
 {
@@ -143,7 +144,7 @@ int main()
             break;
         case 'h':
             display_help(Console_Win);
-            wManager.write_window(Console_Win, MAIN_TID, 9, 1, "Ultima # ");
+            wManager.write_window(Console_Win, MAIN_TID, 10, 1, "Ultima # ");
             break;
         case 'q':
             // End the loop, and end the program.
@@ -156,12 +157,23 @@ int main()
             break;
         case 's':
             wManager.write_window(Dump_Win, MAIN_TID, scheduler.dump()+'\n');
+            wManager.log(" Scheduler dumped.\n");
             break;
         case 'e':
             wManager.write_window(Dump_Win, MAIN_TID, wManager.get_window_lock().dump()+'\n');
+            wManager.log(" Window semaphore dumped.\n");
             break;
         case 'm':
             wManager.write_window(Dump_Win, MAIN_TID, ipc.message_dump()+'\n');
+            wManager.log(" Messages dumped.\n");
+            break;
+        case 'p':
+            tasks_paused = true;
+            wManager.log(" Tasks paused.\n");
+            break;
+        case 'r':
+            tasks_paused = false;
+            wManager.log(" Tasks resumed.\n");
             break;
         case ERR:
             break;
@@ -220,7 +232,8 @@ void display_help(WINDOW *Win)
     wManager.write_window(Win, MAIN_TID, 5, 1, "s = dump scheduler");
     wManager.write_window(Win, MAIN_TID, 6, 1, "e = dump semaphore");
     wManager.write_window(Win, MAIN_TID, 7, 1, "m = dump messages");
-    wManager.write_window(Win, MAIN_TID, 8, 1, "q = Quit");
+    wManager.write_window(Win, MAIN_TID, 8, 1, "p,r = pause/resume");
+    wManager.write_window(Win, MAIN_TID, 9, 1, "q = Quit");
 }
 
 /**
@@ -324,7 +337,7 @@ void *perform_simple_output(void *arguments)
 
         // Let the scheduler decide if this task should pause or not
         scheduler.yield();
-        while (scheduler.get_state(td->task_id) != RUNNING)
+        while (scheduler.get_state(td->task_id) != RUNNING || tasks_paused)
             usleep(10000); // Wait 10ms
     }
 
