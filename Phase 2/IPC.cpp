@@ -54,17 +54,15 @@ int IPC::message_send(int s_id, int d_id, std::string text, Message_Type type)
     return 0;
 }
 
-int IPC::message_receive(int task_id, Message *message)
+int IPC::message_receive(int task_id, Message &message)
 {
-    if (message == nullptr) return -1;
-
     Mailbox* mailbox = get_mailbox(task_id);
     if (mailbox == nullptr) return -1;
 
     mailbox->sem.down(task_id);
     int message_count = mailbox->messages.length();
     if (message_count != 0) {
-        *message = mailbox->messages.dequeue();
+        message = mailbox->messages.dequeue();
     }
     mailbox->sem.up(task_id);
 
@@ -98,12 +96,12 @@ std::string IPC::message_dump()
 {
     std::stringstream str;
 
-    str << "---------------------- Total Message Dump ---------------------" << std::endl;
-    str << "Total messages: " << message_count() << std::endl;
-    str << "---------------------------------------------------------------" << std::endl;
-    str << "Source\tDest\tContent\t\t\t\tType\tArrival" << std::endl;
-    str << "TaskID\tTaskID" << std::endl;
-    str << "---------------------------------------------------------------" << std::endl;
+    str << " ---------------------- Total Message Dump ---------------------" << std::endl;
+    str << " Total messages: " << message_count() << std::endl;
+    str << " ---------------------------------------------------------------" << std::endl;
+    str << " Source\tDest\tContent\t\t\t\tType\tArrival" << std::endl;
+    str << " TaskID\tTaskID" << std::endl;
+    str << " ---------------------------------------------------------------" << std::endl;
 
     Mailbox* m = mailboxes;
     while (m != nullptr)
@@ -112,13 +110,13 @@ std::string IPC::message_dump()
         for (int i = 0; i < mailbox_count; i++)
         {
             Message temp = m->messages.dequeue();
-            str << temp.source_task_id << "\t" << temp.destination_task_id << "\t" << temp.text
+            str << " " << temp.source_task_id << "\t" << temp.destination_task_id << "\t" << temp.text
             << "\t" << temp.type << "\t" << temp.arrival_time << std::endl;
             m->messages.enqueue(temp);
         }
         m = m->next;
     }
-    str << "---------------------------------------------------------------" << std::endl;
+    str << " ---------------------------------------------------------------" << std::endl;
 
     return str.str();
 }
@@ -131,23 +129,23 @@ std::string IPC::message_dump(int task_id)
 
     std::stringstream str;
 
-    str << "------------------------ Message Dump -------------------------" << std::endl;
-    str << "Task" << task_id << " Mailbox\tMessage count: " << message_count(task_id) << std::endl;
-    str << "---------------------------------------------------------------" << std::endl;
-    str << "Source\tDest\tContent\t\t\t\tType\tArrival" << std::endl;
-    str << "TaskID\tTaskID" << std::endl;
-    str << "---------------------------------------------------------------" << std::endl;
+    str << " ------------------------ Message Dump -------------------------" << std::endl;
+    str << " Task" << task_id << " Mailbox\tMessage count: " << message_count(task_id) << std::endl;
+    str << " ---------------------------------------------------------------" << std::endl;
+    str << " Source\tDest\tContent\t\t\t\tType\tArrival" << std::endl;
+    str << " TaskID\tTaskID" << std::endl;
+    str << " ---------------------------------------------------------------" << std::endl;
 
     int mailbox_count = m->messages.length();
     for (int i = 0; i < mailbox_count; i++)
     {
         Message temp = m->messages.dequeue();
-        str << temp.source_task_id << "\t" << temp.destination_task_id << "\t" << temp.text
+        str << " " << temp.source_task_id << "\t" << temp.destination_task_id << "\t" << temp.text
         << "\t" << temp.type << "\t" << temp.arrival_time << std::endl;
         m->messages.enqueue(temp);
     }
 
-    str << "---------------------------------------------------------------" << std::endl;
+    str << " ---------------------------------------------------------------" << std::endl;
 
     return str.str();
 }

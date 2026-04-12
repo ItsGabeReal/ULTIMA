@@ -18,6 +18,7 @@
 #include "Sema.h"
 #include "Sched.h"
 #include "WindowManager.h"
+#include "IPC.h"
 
 using namespace std;
 
@@ -53,6 +54,7 @@ void simulate_work(int amount);
 // this later)
 Scheduler scheduler;
 WindowManager wManager(MAIN_TID, &scheduler);
+IPC ipc(MAX_TASKS);
 
 int main()
 {
@@ -141,7 +143,7 @@ int main()
             break;
         case 'h':
             display_help(Console_Win);
-            wManager.write_window(Console_Win, MAIN_TID, 10, 1, "Ultima # ");
+            wManager.write_window(Console_Win, MAIN_TID, 9, 1, "Ultima # ");
             break;
         case 'q':
             // End the loop, and end the program.
@@ -155,8 +157,11 @@ int main()
         case 's':
             wManager.write_window(Dump_Win, MAIN_TID, scheduler.dump()+'\n');
             break;
-        case 'm':
+        case 'e':
             wManager.write_window(Dump_Win, MAIN_TID, wManager.get_window_lock().dump()+'\n');
+            break;
+        case 'm':
+            wManager.write_window(Dump_Win, MAIN_TID, ipc.message_dump()+'\n');
             break;
         case ERR:
             break;
@@ -199,8 +204,6 @@ int main()
     wManager.log(" Thread 3 State = " + scheduler.get_state(thread_args_3.task_id) + "\n");
 
     sleep(5);
-    // getch();
-    endwin(); // End the curses window
     return (0);
 }
 
@@ -211,14 +214,13 @@ void display_help(WINDOW *Win)
 {
     wManager.clear_window(Win, MAIN_TID);
     wManager.write_window(Win, MAIN_TID, 1, 1, "...Help...");
-    wManager.write_window(Win, MAIN_TID, 2, 1, "1 = Kill T1");
-    wManager.write_window(Win, MAIN_TID, 3, 1, "2 = Kill T2");
-    wManager.write_window(Win, MAIN_TID, 4, 1, "3 = Kill T3");
-    wManager.write_window(Win, MAIN_TID, 5, 1, "c = clear screen");
-    wManager.write_window(Win, MAIN_TID, 6, 1, "h = help screen");
-    wManager.write_window(Win, MAIN_TID, 7, 1, "s = dump scheduler");
-    wManager.write_window(Win, MAIN_TID, 8, 1, "m = dump semaphore");
-    wManager.write_window(Win, MAIN_TID, 9, 1, "q = Quit");
+    wManager.write_window(Win, MAIN_TID, 2, 1, "1,2,3 = Kill Task");
+    wManager.write_window(Win, MAIN_TID, 3, 1, "c = clear screen");
+    wManager.write_window(Win, MAIN_TID, 4, 1, "h = help screen");
+    wManager.write_window(Win, MAIN_TID, 5, 1, "s = dump scheduler");
+    wManager.write_window(Win, MAIN_TID, 6, 1, "e = dump semaphore");
+    wManager.write_window(Win, MAIN_TID, 7, 1, "m = dump messages");
+    wManager.write_window(Win, MAIN_TID, 8, 1, "q = Quit");
 }
 
 /**
@@ -286,6 +288,12 @@ void *perform_simple_output(void *arguments)
     // extract the thread arguments:   (method 1)
     // cast arguments in to thread_data
     thread_data *td = (thread_data *)arguments;
+    int thread_no = td->thread_no;
+    int sleep_time = td->sleep_time;
+    WINDOW *Win = td->thread_win;
+    Message incoming_message;
+    int CPU_Quantum = 0;
+    char buff[256];
 
     // Wait until task is ready to run
     while (scheduler.get_state(td->task_id) != RUNNING)
@@ -293,18 +301,26 @@ void *perform_simple_output(void *arguments)
 
     // Startup message
     wManager.write_window(td->thread_win, td->task_id, 6, 1, "Starting Thread "+std::to_string(td->task_id)+"...\n");
-    
-    int thread_no = td->thread_no;
-    int sleep_time = td->sleep_time;
-    WINDOW *Win = td->thread_win;
-    int CPU_Quantum = 0;
-    char buff[256];
 
     while (scheduler.get_state(td->task_id) != DEAD)
     {
+        // Process message queue
+        int messages = ipc.message_receive(td->task_id, incoming_message);
+        while (messages > 0)
+        {
+            wManager.write_window(td->thread_win, td->task_id,
+                " From T"+std::to_string(incoming_message.source_task_id)+": "+incoming_message.text+"\n");
+
+            messages = ipc.message_receive(td->task_id, incoming_message);
+        }
+
         // Do some work
         wManager.write_window(Win, thread_no, " Task-" + std::to_string(thread_no) + " running #" + std::to_string(CPU_Quantum++) + "\n");
         simulate_work(500'000);
+
+        // Send message
+        int recipient = ((td->task_id + 1) % MAX_TASKS) + 1;
+        ipc.message_send(td->task_id, recipient, "#"+std::to_string(CPU_Quantum-1)+" completed", Message_Type(2));
 
         // Let the scheduler decide if this task should pause or not
         scheduler.yield();

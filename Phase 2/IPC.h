@@ -91,7 +91,7 @@ public:
      * @param task_id Id of task
      * @param message Location to put the received message
      */
-    int message_receive(int task_id, Message *message);
+    int message_receive(int task_id, Message &message);
 
     /**
      * Returns the number of messages in the specified task's mailbox.
