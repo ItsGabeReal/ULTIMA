@@ -35,7 +35,7 @@ struct thread_data
 
 Scheduler scheduler;
 Semaphore sem("Test resource", 1);
-//IPC ipc(3);
+IPC ipc(3);
 
 int main()
 {
@@ -70,6 +70,13 @@ int main()
     // Pause until all threads have completed
     scheduler.wait_for_all_threads();
 
+    std::cout << ipc.message_dump() << std::endl;
+    
+    ipc.message_delete_all(2);
+    std::cout << "Deleted all messages in Task2's mailbox. After:" << std::endl;
+    
+    std::cout << ipc.message_dump() << std::endl;
+
     std::cout << "Unit test completed \n";
     return 0;
 }
@@ -79,6 +86,7 @@ void* worker(void* arg)
     const int WORK_AMOUNT = 10;
     int work_done = 0;
     thread_data *td = (thread_data *)arg;
+    Message* messageStorage = new Message();
 
     // Wait until thread is running
     while (scheduler.get_state(td->task_id) != RUNNING)
@@ -100,6 +108,15 @@ void* worker(void* arg)
         std::cout << "TaskID=" << td->task_id << ": Doing work (" << (float(work_done)/WORK_AMOUNT)*100 << "%)" << std::endl;
         simulate_work(1000000);
         ++work_done;
+
+        ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I am " + std::to_string((float(work_done)/WORK_AMOUNT)*100) + "%) my work!", Message_Type(2));
+
+        std::cout << "Mailbox message count: " << ipc.message_count(td->task_id) << " Total: " << ipc.message_count() << std::endl;
+
+        // int result = ipc.message_receive(td->task_id, messageStorage);
+
+        // if (result == -1) std::cout << "An error occurred when reading mailbox.\n";
+        // else if (result > 0) std::cout << "Message Received: " << messageStorage->text << " Sender: " << messageStorage->source_task_id << "\n";
         
         // Let the scheduler decide if we should pause or not
         scheduler.yield();
@@ -113,6 +130,9 @@ void* worker(void* arg)
     sem.up(td->task_id);
 
     std::cout << " -------------------- Task " << td->thread_no << " Finished --------------------\n\n";
+
+    ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I just finished my work!", Message_Type(2));
+    std::cout << ipc.message_dump(td->task_id) << std::endl;
 
     scheduler.set_state(td->task_id, DEAD);
     return nullptr;
