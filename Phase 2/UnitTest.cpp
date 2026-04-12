@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include "Sema.h"
 #include "Sched.h"
+#include "IPC.h"
 
 // Forward Declarations
 void* worker(void* arg);
@@ -34,6 +35,7 @@ struct thread_data
 
 Scheduler scheduler;
 Semaphore sem("Test resource", 1);
+//IPC ipc(3);
 
 int main()
 {
@@ -101,8 +103,10 @@ void* worker(void* arg)
         
         // Let the scheduler decide if we should pause or not
         scheduler.yield();
-        while (scheduler.get_state(td->task_id) != RUNNING)
-            sleep(1);
+        while (scheduler.get_state(td->task_id) != RUNNING) {
+            simulate_work(1000000);
+            scheduler.yield();
+        }    
     }
 
     // Release resource

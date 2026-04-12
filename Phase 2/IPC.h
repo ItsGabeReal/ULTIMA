@@ -11,35 +11,65 @@
 #define IPC_H
 
 #include "Queue.h"
+#include "Sema.h"
+
+enum Message_Type
+{
+    TEXT = 0,
+    SERVICE = 1,
+    NOTIFICATION = 2
+};
+
+struct Message
+{
+    int source_task_id;
+    int destination_task_id;
+    time_t arrival_time;
+    Message_Type type;
+    std::string text;
+};
+
+struct Mailbox
+{
+    int task_id;
+    Queue<Message> messages;
+    Semaphore sem;
+    Mailbox *next;
+
+    /**
+     * Constructor for a new Mailbox. Needed constructor to initialize the semaphore.
+     *
+     * @param tid Id of the task that will use this mailbox
+     * @param name Name assigned to the mailbox semaphore for debug purposes
+     */
+    Mailbox(int tid, std::string name) : sem(name)
+    {
+        task_id = tid;
+    };
+};
 
 class IPC
 {
-    enum Message_Type
-    {
-        TEXT = 0,
-        SERVICE = 1,
-        NOTIFICATION = 2
-    };
-    
-    struct Message
-    {
-        int source_task_id;
-        int destination_task_id;
-        time_t arrival_time;
-        Message_Type type;
-        std::string text;
-    };
-
-    struct Mailbox
-    {
-        int task_id;
-        Queue<Message> messages;
-        Mailbox* next;
-    };
-
-    Mailbox* mailboxes;
+private:
     int max_tasks;
+    Mailbox *mailboxes;
 
+    /**
+     * Creates a new mailbox and adds it to the mailboxes linked list.
+     * 
+     * @param tid Id of the task that will use this mailbox
+     * @param name Name assigned to the mailbox semaphore for debug purposes
+     */
+    void create_mailbox(int tid, std::string name);
+
+    /**
+     * Gets a pointer to the mailbox for the specified task.
+     * 
+     * @param tid Id of the task that uses the mailbox
+     */
+    Mailbox* get_mailbox(int tid);
+
+public:
     /**
      * Constructor
      */
@@ -47,7 +77,7 @@ class IPC
 
     /**
      * Send a message from one task to another.
-     * 
+     *
      * @param s_id Sender's task id
      * @param d_id Destination's task id
      * @param text Text content of the message
@@ -57,15 +87,15 @@ class IPC
 
     /**
      * Read a message from specified task's mailbox.
-     * 
+     *
      * @param task_id Id of task
      * @param message Location to put the received message
      */
-    int message_receive(int task_id, Message* message);
+    int message_receive(int task_id, Message *message);
 
     /**
      * Returns the number of messages in the specified task's mailbox.
-     * 
+     *
      * @param task_id Id of task
      */
     int message_count(int task_id);
@@ -91,4 +121,4 @@ class IPC
     int message_delete_all(int task_id);
 };
 
-#endif IPC_H
+#endif

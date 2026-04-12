@@ -1,9 +1,9 @@
 # Sources to include in the main application
-SRCS = Ultima.cpp Sema.cpp Sched.cpp WindowManager.cpp
+SRCS = Ultima.cpp Sema.cpp Sched.cpp IPC.cpp WindowManager.cpp
 OBJS = $(SRCS:%.cpp=build/%.o) # Define a .o file for every .cpp file
 
 # Sources to include for unit testing
-TEST_SRCS = UnitTest.cpp Sema.cpp Sched.cpp
+TEST_SRCS = UnitTest.cpp Sema.cpp Sched.cpp IPC.cpp
 TEST_OBJS = $(TEST_SRCS:%.cpp=build/%.o)
 
 # Entry point for the `make` command

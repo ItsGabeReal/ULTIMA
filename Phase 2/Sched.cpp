@@ -105,8 +105,9 @@ void Scheduler::yield()
     clock_t elapsed_time = clock() - running_task->start_time;
 
     // If current task is RUNNING we change its state to READY
-    if (elapsed_time >= current_quantum)
+    if (elapsed_time >= current_quantum) {
         try_switch_task();
+    }
 
     pthread_mutex_unlock(&lock);
 }
