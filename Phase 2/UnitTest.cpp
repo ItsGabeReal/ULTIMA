@@ -39,10 +39,6 @@ IPC ipc(3);
 
 int main()
 {
-    // Reduce the amount of work each task can do at a time (this may need to be
-    // fine-tuned depending on the machine it's run on).
-    scheduler.set_quantum(10000);
-
     Semaphore::set_scheduler_ptr(&scheduler); // Initialize scheduler pointer for Semaphore class
 
     std::cout << "Starting unit test for Semaphore and Scheduler\n\n";
@@ -90,10 +86,7 @@ void* worker(void* arg)
 
     // Wait until thread is running
     while (scheduler.get_state(td->task_id) != RUNNING)
-    {
-        // std::cout << "TaskID=" << td->task_id << ": Waiting to start\n";
-        sleep(1);
-    }
+        usleep(10000);
     
     std::cout << " -------------------- Task " << td->thread_no << " Started --------------------\n";
     
@@ -106,7 +99,7 @@ void* worker(void* arg)
     {
         // Simulate doing work
         std::cout << "TaskID=" << td->task_id << ": Doing work (" << (float(work_done)/WORK_AMOUNT)*100 << "%)" << std::endl;
-        simulate_work(1000000);
+        simulate_work(500'000);
         ++work_done;
 
         ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I am " + std::to_string((float(work_done)/WORK_AMOUNT)*100) + "%) my work!", Message_Type(2));
@@ -120,10 +113,8 @@ void* worker(void* arg)
         
         // Let the scheduler decide if we should pause or not
         scheduler.yield();
-        while (scheduler.get_state(td->task_id) != RUNNING) {
-            simulate_work(1000000);
-            scheduler.yield();
-        }    
+        while (scheduler.get_state(td->task_id) != RUNNING)
+            usleep(10000);
     }
 
     // Release resource
@@ -139,14 +130,9 @@ void* worker(void* arg)
 }
 
 /**
- * Wastes CPU time.
+ * Wastes time.
  */
 void simulate_work(int amount)
 {
-    int counter = 0;
-    for (int i = 0; i < amount; ++i)
-    {
-        ++counter;
-    }
-    usleep(100000);
+    usleep(amount);
 }

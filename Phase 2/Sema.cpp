@@ -79,6 +79,8 @@ void Semaphore::up(int task_id)
 
     pthread_mutex_lock(&lock);
 
+    LOG("TaskID=" << task_id << ": Before up()\n" << dump() << std::endl << std::endl);
+
     if (sema_queue.is_empty())
     {
         lucky_task = -1;
@@ -86,6 +88,8 @@ void Semaphore::up(int task_id)
     }
     else
         lucky_task = sema_queue.dequeue();
+
+    LOG("TaskID=" << task_id << ": After up()\n" << dump() << std::endl << std::endl);
 
     pthread_mutex_unlock(&lock);
 }

@@ -4,7 +4,7 @@ Scheduler::Scheduler()
 {
     process_table = nullptr;    // No processes yet
     current_task = -1;          // No task is running
-    current_quantum = 10000000 / MAX_TASKS;
+    current_quantum = 3000;     // Alloted runtime for each task (milliseconds)
     next_available_id = 1;      // Start ids at 1
 }
 
@@ -36,7 +36,7 @@ int Scheduler::create_task(std::string task_name, void *(*task_function)(void *)
 void Scheduler::start()
 {
     // process_table points to first task
-    process_table->start_time = clock();
+    process_table->start_time = std::chrono::steady_clock::now();
     process_table->state = RUNNING;
     current_task = process_table->task_id;
     
@@ -66,9 +66,28 @@ void Scheduler::set_state(int task_id, std::string new_state)
 
     LOG("task_id="<<task_id<<": " << old_state << " -> " << new_state << std::endl);
 
-    // The current task is no longer running. Switch to another one.
+    // The currently running task stopped, so switch to another task.
+    // If there are no ready tasks, then nothing is running.
     if (old_state == RUNNING && new_state != RUNNING)
-        try_switch_task();
+    {
+        bool task_switched = try_switch_task();
+
+        if (!task_switched)
+        {
+            // The running task stopped, and no other task is ready to replace
+            // it. Now there is no currently running task.
+            current_task = -1;
+        }
+    }
+    // If no task is running and this task becomes ready, start it.
+    else if (current_task == -1 && new_state == READY)
+    {
+        LOG("set_state(): No tasks are running. Starting task_id " << task_id << "..." << std::endl);
+        LOG(dump() << std::endl);
+        t->state = RUNNING;
+        current_task = task_id;
+        LOG("task_id="<<task_id<<": " << READY << " -> " << RUNNING << std::endl);
+    }
 
     pthread_mutex_unlock(&lock);
 }
@@ -102,7 +121,12 @@ void Scheduler::yield()
     }
 
     // Calculate elapsed_time since the task last started to run.
-    clock_t elapsed_time = clock() - running_task->start_time;
+    // Note: To simplify testing, this is based on a timer instead of the CPU
+    // clock.
+    // clock_t elapsed_time = clock() - running_task->start_time;
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - running_task->start_time).count();
 
     // If current task is RUNNING we change its state to READY
     if (elapsed_time >= current_quantum) {
@@ -139,7 +163,9 @@ std::string Scheduler::dump(int level)
     int count = 0;
     while (current_task != nullptr)
     {
-        str << " " << current_task->task_name << "\t" << std::to_string(current_task->task_id) << "\t" << current_task->state << "\t" << std::to_string(current_task->start_time) << "\n";
+        auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+            current_task->start_time.time_since_epoch()).count();
+        str << " " << current_task->task_name << "\t" << std::to_string(current_task->task_id) << "\t" << current_task->state << "\t" << std::to_string(start_time) << "\n";
 
         current_task = current_task->next;
         count++;
@@ -176,7 +202,7 @@ bool Scheduler::try_switch_task()
             current_task = t->task_id;
             LOG("task_id="<<current_task<<": " << t->state << " -> " << RUNNING << std::endl);
             t->state = RUNNING;
-            t->start_time = clock();
+            t->start_time = std::chrono::steady_clock::now();
 
             LOG("Task switched\n" << dump() << std::endl << std::endl);
             return true;

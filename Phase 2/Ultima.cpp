@@ -304,7 +304,7 @@ void *perform_simple_output(void *arguments)
     {
         // Do some work
         wManager.write_window(Win, thread_no, " Task-" + std::to_string(thread_no) + " running #" + std::to_string(CPU_Quantum++) + "\n");
-        simulate_work(10000);
+        simulate_work(500'000);
 
         // Let the scheduler decide if this task should pause or not
         scheduler.yield();
@@ -378,14 +378,9 @@ void *perform_cpu_work(void *arguments)
 }
 
 /**
- * Wastes CPU time.
+ * Wastes time.
  */
 void simulate_work(int amount)
 {
-    int counter = 0;
-    for (int i = 0; i < amount; ++i)
-    {
-        ++counter;
-        usleep(10);
-    }
+    usleep(amount);
 }

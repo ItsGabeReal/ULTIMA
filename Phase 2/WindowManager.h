@@ -20,7 +20,7 @@
 class WindowManager
 {
 private:
-    Semaphore window_lock; // Prevents multiple threads from exiting windows at the same time
+    Semaphore window_lock; // Prevents multiple threads from editing windows at the same time
 
     WINDOW* Log_Win;
 

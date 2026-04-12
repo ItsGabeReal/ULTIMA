@@ -18,6 +18,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <assert.h>
+#include <chrono>
 #include "Log.h"
 
 //--------------------------------------------------------
@@ -45,7 +46,7 @@ struct TCB
     int task_id;
     std::string task_name;
     std::string state;
-    clock_t start_time;
+    std::chrono::steady_clock::time_point start_time;
     pthread_t thread;
     TCB *next;
 };
