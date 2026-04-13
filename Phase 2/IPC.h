@@ -37,7 +37,8 @@ struct Mailbox
     Mailbox *next;
 
     /**
-     * Constructor for a new Mailbox. Needed constructor to initialize the semaphore.
+     * Constructor for a new Mailbox. Needed constructor to initialize the
+     * semaphore.
      *
      * @param tid Id of the task that will use this mailbox
      * @param name Name assigned to the mailbox semaphore for debug purposes
