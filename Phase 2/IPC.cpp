@@ -18,6 +18,21 @@ Mailbox* IPC::get_mailbox(int tid)
     return nullptr;
 }
 
+std::string IPC::format_message_type(Message_Type m_t)
+{
+    switch (m_t)
+    {
+    case 0:
+        return "TEXT";
+    case 1:
+        return "SERVICE";
+    case 2:
+        return "NOTIFICATION";
+    default:
+        return "UNKNOWN";
+    }
+}
+
 IPC::IPC(int max_tasks)
 {
     this->max_tasks = max_tasks;
@@ -111,7 +126,7 @@ std::string IPC::message_dump()
         {
             Message temp = m->messages.dequeue();
             str << " " << temp.source_task_id << "\t" << temp.destination_task_id << "\t" << temp.text
-            << "\t" << temp.type << "\t" << temp.arrival_time << std::endl;
+            << "\t" << format_message_type(temp.type).substr(0,7) << "\t" << temp.arrival_time << std::endl;
             m->messages.enqueue(temp);
         }
         m = m->next;
@@ -141,7 +156,7 @@ std::string IPC::message_dump(int task_id)
     {
         Message temp = m->messages.dequeue();
         str << " " << temp.source_task_id << "\t" << temp.destination_task_id << "\t" << temp.text
-        << "\t" << temp.type << "\t" << temp.arrival_time << std::endl;
+        << "\t" << format_message_type(temp.type).substr(0,7) << "\t" << temp.arrival_time << std::endl;
         m->messages.enqueue(temp);
     }
 

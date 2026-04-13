@@ -69,6 +69,13 @@ private:
      */
     Mailbox* get_mailbox(int tid);
 
+    /**
+     * Gets the string represenation of the Message_Type.
+     * 
+     * @param m_t The Message_Type to convert
+     */
+    std::string format_message_type(Message_Type m_t);
+
 public:
     /**
      * Constructor

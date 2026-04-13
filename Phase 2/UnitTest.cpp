@@ -10,6 +10,7 @@
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
+#include <cmath>
 #include "Sema.h"
 #include "Sched.h"
 #include "IPC.h"
@@ -102,7 +103,7 @@ void* worker(void* arg)
         simulate_work(500'000);
         ++work_done;
 
-        ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I am " + std::to_string((float(work_done)/WORK_AMOUNT)*100) + "%) my work!", Message_Type(2));
+        ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I am " + std::to_string((int)round((float(work_done)/WORK_AMOUNT)*100)) + "\% done with my work.", TEXT);
 
         std::cout << "Mailbox message count: " << ipc.message_count(td->task_id) << " Total: " << ipc.message_count() << std::endl;
 
@@ -122,7 +123,7 @@ void* worker(void* arg)
 
     std::cout << " -------------------- Task " << td->thread_no << " Finished --------------------\n\n";
 
-    ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I just finished my work!", Message_Type(2));
+    ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I just finished my work!", NOTIFICATION);
     std::cout << ipc.message_dump(td->task_id) << std::endl;
 
     scheduler.set_state(td->task_id, DEAD);
