@@ -1,0 +1,91 @@
+/**
+ * WindowManager.h
+ *
+ * Helper class to make using nCurses windows easier.
+ *
+ * @author Colin Christy
+ * @date 3/29/2026
+ */
+
+#ifndef WINDOW_MANAGER_H
+#define WINDOW_MANAGER_H
+
+#include <ncurses.h>
+#include <pthread.h>
+#include <string>
+#include "Sched.h"
+#include "Sema.h"
+#include "Sched.h"
+
+class WindowManager
+{
+private:
+    Semaphore window_lock; // Prevents multiple threads from editing windows at the same time
+
+    WINDOW* Log_Win;
+
+    int main_thread_id; // Thread ID where the window manager is running
+
+    void display_screen_data();
+
+public:
+
+    /**
+     * Initializes the window manager, creates the log window, and prints screen
+     * information.
+     * 
+     * @param thread_id The thread ID of the process that is running the window
+     * manager
+     * @param scheduler Pointer to the scheduler
+     */
+    WindowManager(int thread_id, Scheduler* scheduler);
+    ~WindowManager();
+
+    /**
+     * Creates a new nCurses window with the given parameters.
+     * @param thread_id Id of thread creating the window
+     * @param height Height of the window
+     * @param width Width of the window
+     * @param starty Y coordinate for top left corner
+     * @param startx X coordinate for top left corner
+     */
+    WINDOW *create_window(int thread_id, int height, int width, int starty, int startx);
+
+    /**
+     * Writes the provided text to the specified window.
+     *
+     * @param Win Window to output text
+     * @param text Text to output
+     */
+    void write_window(WINDOW *Win, int thread_id, std::string text);
+
+    /**
+     * Writes the provide text to the specified window and coordinates.
+     *
+     * @param Win Window to output text
+     * @param y Y coordinate to output text
+     * @param x X coordinate to output text
+     * @param text Text to output
+     */
+    void write_window(WINDOW *Win, int thread_id, int y, int x, std::string text);
+
+    /**
+     * Clears the specified window.
+     * 
+     * @param Win Window to clear
+     */
+    void clear_window(WINDOW *Win, int thread_id);
+
+    /**
+     * Prints message to the log window.
+     * 
+     * @param message Message to be printed
+     */
+    void log(std::string message);
+
+    /**
+     * Returns a read-only reference to the window semaphore.
+     */
+    const Semaphore& get_window_lock() { return window_lock; }
+};
+#endif
