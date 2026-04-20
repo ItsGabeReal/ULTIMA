@@ -14,126 +14,229 @@
 #include "Sema.h"
 #include "Sched.h"
 #include "IPC.h"
+#include "MMU.h"
 
-// Forward Declarations
-void* worker(void* arg);
-void simulate_work(int amount);
+int total_tests = 0, good_tests = 0;
 
 /**
- * Data Structure for each thread.
- * Note that each thread has access to its own WINDOW and should
- * be able to display its output to its private window.
+ * Prints the test's name with either a checkmark or cross, depending on the
+ * value of the condition.
  */
-struct thread_data
-{
-    int thread_no;
-    std::string thread_state;
-    bool kill_signal;
-    int sleep_time;
-    int thread_results;
-    int task_id; // ID assigned to this task once created
-};
+#define TEST(name, cond) { \
+    if (cond) { \
+        std::cout << "\033[32m\u2713 " << (name) << "\033[0m\n"; \
+        ++good_tests; \
+    } else { \
+        std::cout << "\033[31m\u2717 " << (name) \
+                  << " (" << __FILE__ << ":" << __LINE__ << ")\033[0m\n"; \
+    } \
+    ++total_tests; \
+} 
+/**
+ * Indicates a successful test if the statement throws an exception.
+ */
+#define THROWS(name, statement) { \
+    bool threw = false; \
+    try { statement; } catch (...) { threw = true; } \
+    TEST((name), threw); \
+}
 
-Scheduler scheduler;
-Semaphore sem("Test resource", 1);
-IPC ipc(3);
+void* worker(void*);
 
 int main()
 {
+    Scheduler scheduler;
+    IPC ipc(3);
     Semaphore::set_scheduler_ptr(&scheduler); // Initialize scheduler pointer for Semaphore class
+    MMU* mmu;
+    int mem_handle, res;
+    char ch;
+    std::string str;
 
-    std::cout << "Starting unit test for Semaphore and Scheduler\n\n";
+    /**
+     * Setup
+     */
+    int task1 = scheduler.create_task("Task 1", worker, nullptr);
+    int task2 = scheduler.create_task("Task 2", worker, nullptr);
+    int task3 = scheduler.create_task("Task 3", worker, nullptr);
 
-    // Create multiple tasks, and add them to the scheduler
-    const int NUM_THREADS = 3;
-    thread_data threads[NUM_THREADS];
-    int id;
-    std::string name;
-    for (int i = 0; i < NUM_THREADS; ++i)
-    {
-        threads[i].kill_signal = false;
-        threads[i].thread_no = i+1;
-        threads[i].thread_state = READY;
-        threads[i].sleep_time = 1 + rand() % 3;
-        threads[i].thread_results = 0;
 
-        name = ("Task "+std::to_string(i+1)).c_str();
-        threads[i].task_id = scheduler.create_task(name, worker, &threads[i]);
-    }
+    /**
+     * Constructor
+     */
+    std::cout << "---------- Constructor Tests ----------" << std::endl;
 
-    // Start scheduler
-    scheduler.start();
+    THROWS("Throws exception when page_size > size",
+        MMU test(32, '.', 64));
 
-    // Pause until all threads have completed
-    scheduler.wait_for_all_threads();
-
-    std::cout << ipc.message_dump() << std::endl;
+    THROWS("Throws exception when page_size doesn't evenly divide size",
+        MMU test(32, '.', 15));
     
-    ipc.message_delete_all(2);
-    std::cout << "Deleted all messages in Task2's mailbox. After:" << std::endl;
+    mmu = new MMU(32, '.', 8);
+    TEST("MMU initializes properly / core_dump() and mem_dump() work properly",
+        mmu->core_dump() == "................................"
+        && mmu->mem_dump() ==
+        " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
+        " Free\t0\t0\t31\t32\tNA\tMMU");
     
-    std::cout << ipc.message_dump() << std::endl;
 
-    std::cout << "Unit test completed \n";
+    /**
+     * mem_alloc()
+     */
+    std::cout << "\n---------- mem_alloc() Tests ----------" << std::endl;
+
+    mmu->mem_alloc(7, task1);
+    TEST("Single page allocated", mmu->mem_dump() ==
+        " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
+        " Used\t0\t0\t7\t8\t0\t1\n"
+        " Free\t8\t8\t31\t24\tNA\tMMU");
+    
+    mem_handle = mmu->mem_alloc(9, task2);
+    TEST("Multiple pages allocated", mmu->mem_dump() ==
+        " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
+        " Used\t0\t0\t7\t8\t0\t1\n"
+        " Used\t8\t8\t23\t16\t0\t2\n"
+        " Free\t24\t24\t31\t8\tNA\tMMU");
+
+    // With the first 8 bytes already by task1, task2's handle should be 8
+    TEST("Expected memory handle returned", mem_handle == 8);
+
+    mem_handle = mmu->mem_alloc(7, task2);
+    TEST("Do not allocate if task already has memory allocated",
+        mem_handle == -1);
+
+    mem_handle = mmu->mem_alloc(16, task3);
+    TEST("Do not allocate if there is insufficient space", mem_handle == -1);
+
+
+    /**
+     * mem_write()
+     */
+    std::cout << "\n---------- mem_write() Tests ----------" << std::endl;
+    
+    std::cout << "Single character" << std::endl;
+
+    res = mmu->mem_write(8, 'H', task2);
+    TEST("Write single character",
+        mmu->core_dump() == "........H.......................");
+
+    res = mmu->mem_write(8, 'i', task2);
+    TEST("Characters write sequentially",
+        mmu->core_dump() == "........Hi......................");
+
+    for (int i = 2; i < 16; ++i)
+        mmu->mem_write(8, '*', task2); // Fill remaining memory with '*'
+    res = mmu->mem_write(8, '!', task2); // Try (and fail) to write next character
+    TEST("End of memory reached, and current_location gets reset to beginning",
+        mmu->core_dump() == "........Hi**************........"
+        && res == -1
+        && scheduler.get_tcb_pointer(task2)->current_location == 0);
+
+    res = mmu->mem_write(1000, '!', task2);
+    TEST("Return -1 when memory handle is invalid", res == -1);
+
+    res = mmu->mem_write(8, '!', task3);
+    TEST("Return -1 when task does not own memory handle", res == -1);
+
+    std::cout << "Multiple characters" << std::endl;
+
+    mmu->mem_write(0, 1, "Hello", task1);
+    TEST("Write multiple memory values at once", mmu->core_dump() ==
+        ".Hello..Hi**************........");
+
+    res = mmu->mem_write(0, 1, "********", task1); // Try to write 1 char beyond the allocated size
+    TEST("Return -1 when memory range is invalid", res == -1);
+
+    res = mmu->mem_write(1000, 1, "*****", task1);
+    TEST("Return -1 when memory handle is invalid)", res == -1);
+
+    res = mmu->mem_write(0, 1, "*****", task2);
+    TEST("Return -1 when task does not own memory handle)", res == -1);
+
+
+    /**
+     * mem_free()
+     */
+    std::cout << "\n---------- mem_free() Tests ----------" << std::endl;
+    
+    res = mmu->mem_free(1000, task1);
+    TEST("Return -1 if memory handle is out of bounds", res == -1);
+
+    res = mmu->mem_free(0, task3);
+    TEST("Return -1 if task does not own memory handle", res == -1);
+
+    mmu->mem_free(0, task1);
+    TEST("Free single block of memory", mmu->mem_dump() ==
+        " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
+        " Free\t0\t0\t7\t8\tNA\tMMU\n"
+        " Used\t8\t8\t23\t16\t0\t2\n"
+        " Free\t24\t24\t31\t8\tNA\tMMU"
+        && mmu->core_dump() == "........Hi**************........");
+
+    mmu->mem_free(8, task2);
+    TEST("Free multiple blocks of memory & coalesce empty space", mmu->mem_dump() ==
+        " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
+        " Free\t0\t0\t31\t32\tNA\tMMU"
+        && mmu->core_dump() == "................................");
+
+    mmu->mem_alloc(8, task1);
+    TEST("Task acquires new memory after freeing", mmu->mem_dump() ==
+        " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
+        " Used\t0\t0\t7\t8\t0\t1\n"
+        " Free\t8\t8\t31\t24\tNA\tMMU");
+    
+
+    /**
+     * mem_read()
+     */
+    std::cout << "\n---------- mem_free() Tests ----------" << std::endl;
+
+    std::cout << "Single character" << std::endl;
+
+    mmu->mem_alloc(8, task2); // Test memory somewhere in the middle of memory space
+    mmu->mem_write(8, 0, "shrimped", task2); // Fill memory with 8-letter word
+    mmu->mem_read(8, &ch, task2);
+    TEST("Character is read", ch == 's');
+    
+    mmu->mem_read(8, &ch, task2);
+    TEST("Characters read sequentially", ch == 'h');
+
+    for (int i = 2; i < 8; ++i)
+        mmu->mem_read(8, &ch, task2); // Read remaining characters in memory
+    res = mmu->mem_read(8, &ch, task2); // Try (and fail) to read next character
+    TEST("End of memory reached, and current_location gets reset to beginning",
+        res == -1
+        && scheduler.get_tcb_pointer(task2)->current_location == 0);
+    
+    res = mmu->mem_read(1000, &ch, task2);
+    TEST("Return -1 when memory handle is invalid", res == -1);
+
+    res = mmu->mem_read(8, &ch, task1);
+    TEST("Return -1 when task does not own memory handle", res == -1);
+
+    std::cout << "Multiple characters" << std::endl;
+
+    mmu->mem_read(8, 2, 4, &str, task2);
+    TEST("Read multiple characters at once", str == "rimp");
+    
+    res = mmu->mem_read(8, 2, 8, &str, task2);
+    TEST("Return -1 when range is invalid", res == -1);
+
+    res = mmu->mem_read(1000, 2, 4, &str, task2);
+    TEST("Return -1 when memory handle is invalid", res == -1);
+
+    res = mmu->mem_read(8, 2, 4, &str, task1);
+    TEST("Return -1 when task does not own memory handle", res == -1);
+
+
+    /**
+     * Recap
+     */
+    std::cout << "\nTests finished: " << good_tests << "/" << total_tests << " passed." << std::endl;
+
+    
     return 0;
 }
 
-void* worker(void* arg)
-{
-    const int WORK_AMOUNT = 10;
-    int work_done = 0;
-    thread_data *td = (thread_data *)arg;
-    Message* messageStorage = new Message();
-
-    // Wait until thread is running
-    while (scheduler.get_state(td->task_id) != RUNNING)
-        usleep(10000);
-    
-    std::cout << " -------------------- Task " << td->thread_no << " Started --------------------\n";
-    
-    // Try to claim resource
-    sem.down(td->task_id);
-
-
-    // Do work while yielding to the scheduler
-    while (work_done < WORK_AMOUNT)
-    {
-        // Simulate doing work
-        std::cout << "TaskID=" << td->task_id << ": Doing work (" << (float(work_done)/WORK_AMOUNT)*100 << "%)" << std::endl;
-        simulate_work(500'000);
-        ++work_done;
-
-        ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I am " + std::to_string((int)round((float(work_done)/WORK_AMOUNT)*100)) + "\% done with my work.", TEXT);
-
-        std::cout << "Mailbox message count: " << ipc.message_count(td->task_id) << " Total: " << ipc.message_count() << std::endl;
-
-        // int result = ipc.message_receive(td->task_id, messageStorage);
-
-        // if (result == -1) std::cout << "An error occurred when reading mailbox.\n";
-        // else if (result > 0) std::cout << "Message Received: " << messageStorage->text << " Sender: " << messageStorage->source_task_id << "\n";
-        
-        // Let the scheduler decide if we should pause or not
-        scheduler.yield();
-        while (scheduler.get_state(td->task_id) != RUNNING)
-            usleep(10000);
-    }
-
-    // Release resource
-    sem.up(td->task_id);
-
-    std::cout << " -------------------- Task " << td->thread_no << " Finished --------------------\n\n";
-
-    ipc.message_send(td->task_id, ((td->task_id + 1) % MAX_TASKS) + 1, "I just finished my work!", NOTIFICATION);
-    std::cout << ipc.message_dump(td->task_id) << std::endl;
-
-    scheduler.set_state(td->task_id, DEAD);
-    return nullptr;
-}
-
-/**
- * Wastes time.
- */
-void simulate_work(int amount)
-{
-    usleep(amount);
-}
+// Placeholder thread function
+void* worker(void* args) { return nullptr; }

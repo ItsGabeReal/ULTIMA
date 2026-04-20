@@ -6,6 +6,7 @@ Scheduler::Scheduler()
     current_task = -1;          // No task is running
     current_quantum = 3000;     // Alloted runtime for each task (milliseconds)
     next_available_id = 1;      // Start ids at 1
+    pthread_mutex_init(&lock, nullptr);
 }
 
 Scheduler::~Scheduler()

@@ -82,7 +82,7 @@ public:
      * @param task_name Name of the task being created.
      * @param task_function Function that the task will execute.
      * @param args Additional arguments for the task.
-     * @returns Thread ID for the newly created task
+     * @returns Task ID for the newly created task
      */
     int create_task(std::string task_name, void *(*task_function)(void *), void *args);
 

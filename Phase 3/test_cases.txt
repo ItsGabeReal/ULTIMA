@@ -4,12 +4,31 @@ mmu(int size, char default_initial_value, int page_size)
 - Creates as expected with valid arguments
 - Memory is sized properly (use dump to test this)
 
+std::string mem_dump()
+- Correctly displays expected output
+
+std::string core_dump()
+- Correctly displays expected output
+
 int mem_alloc(int size, int thread_id)
 - Ensure memory gets allocated as expected
 - Ensure first-fit is followed, and expected memory handle is returned
 - Do not allocate memory if process has any allocated memory
 - Memory allocates when it has been previously allocated and freed
 - Error when not enough memory is available
+
+int mem_write(int mem_handle, char ch, int thread_id)
+- Write to the current_location address
+- Next write goes to the next location
+- Once the current_location reaches the end, return -1 and reset it to the beginning (try single/multiple blocks)
+- Error when memory handle is out of bounds
+- Error when memory handle isn't owned by process id
+
+int mem_write(int mem_handle, int offset_from_beg, int text_size, char*text, int thread_id)
+- Valid range writes expected value (try single/multiple blocks)
+- Error when offset and size are out of bounds (try single/multiple blocks)
+- Error when memory handle is out of bounds
+- Error when memory handle isn't owned by process id
 
 int mem_free(int mem_handle, int thread_id)
 - The correct amount of memory is freed (try single/multiple blocks)
@@ -23,36 +42,8 @@ int mem_read(int mem_handle, char *ch, int thread_id)
 - Error when memory handle is out of bounds
 - Error when memory handle isn't owned by process id
 
-int mem_write(int mem_handle, char ch, int thread_id)
-- Write to the current_location address
-- Next write goes to the next location
-- Once the current_location reaches the end, return -1 and reset it to the beginning (try single/multiple blocks)
-- Error when memory handle is out of bounds
-- Error when memory handle isn't owned by process id
-
 int mem_read(int mem_handle, int offset_from_beg, int text_size, char*text, int thread_id)
 - Valid range returns expected value (try single/multiple blocks)
 - Error when offset and size are out of bounds (try single/multiple blocks)
 - Error when memory handle is out of bounds
 - Error when memory handle isn't owned by process id
-
-int mem_write(int mem_handle, int offset_from_beg, int text_size, char*text, int thread_id)
-- Valid range writes expected value (try single/multiple blocks)
-- Error when offset and size are out of bounds (try single/multiple blocks)
-- Error when memory handle is out of bounds
-- Error when memory handle isn't owned by process id
-
-int mem_left()
-- Correctly outputs (even when there are multiple holes)
-
-int mem_largest()
-- Correctly finds largest memory
-
-int mem_smallest()
-- Correctly finds smallest memory
-
-int mem_coalesce()
-- Already tested by mem_free()
-
-std::string mem_dump(int starting_from, int num_bytes)
-- Correctly displays expected output (test first)

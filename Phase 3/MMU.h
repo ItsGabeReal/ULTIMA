@@ -8,23 +8,33 @@ public:
     MMU(int size, char default_initial_value, int page_size);
     ~MMU();
 
-    int mem_alloc(int size, int thread_id);
-    int mem_free(int mem_handle, int thread_id);
-    int mem_read(int mem_handle, char *ch, int thread_id);
-    int mem_read(int mem_handle, int offset_from_beg, int text_size, char*text, int thread_id);
-    int mem_write(int mem_handle, char ch, int thread_id);
-    int mem_write(int mem_handle, int offset_from_beg, int text_size, char*text, int thread_id);
-    std::string mem_dump(int starting_from, int num_bytes); // Memory information, like 
+    /**
+     * Returns the memory handle of the newly allocated memory block, or -1
+     * if there is no memory available, or the task already has memory
+     * allocated.
+     */
+    int mem_alloc(int size, int task_id);
+
+    /**
+     * Frees memory at given mem_handle.
+     * 
+     * Returns -1 if the memory handle is invalid, or is not owned by task.
+     */
+    int mem_free(int mem_handle, int task_id);
+
+    int mem_read(int mem_handle, char *ch, int task_id);
+    int mem_read(int mem_handle, int offset_from_beg, int text_size, std::string *text, int task_id);
+    int mem_write(int mem_handle, char ch, int task_id);
+    int mem_write(int mem_handle, int offset_from_beg, std::string text, int task_id);
+    std::string mem_dump(); // Memory information, like 
     
     /**
-     * Dumps the memory contents, with one page per line.
-     * 
-     * Example output where page_size=8 and size=32:
-     * 
-     * "........\n
-     *  ........\n
-     *  ........\n
-     *  ........"
+     * Dumps the memory contents.
+     */
+    std::string core_dump();
+
+    /**
+     * Dumps contents of a certain memory region.
      */
     std::string core_dump(int starting_from, int num_bytes);
 
