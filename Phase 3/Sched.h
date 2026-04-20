@@ -48,6 +48,8 @@ struct TCB
     std::string state;
     std::chrono::steady_clock::time_point start_time;
     pthread_t thread;
+    int mem_handle; // Start location of memory that has been allocated to this task
+    int current_location; // Offset within allocated memory for next read/write operation
     TCB *next;
 };
 
