@@ -2,6 +2,21 @@
 
 MMU::MMU(int size, char default_initial_value, int page_size)
 {
+    if (page_size > size) throw "'size' cannot be less than 'page_size'.";
+
+    if (size % page_size != 0) throw "'page_size' must evenly divide 'size'.";
+
+    this->size = size;
+    this->page_size = page_size;
+
+    for (int i = 0; i < size; i++)
+    {
+        data[i] = default_initial_value;
+    }
+    for (int i = 0; i < size; i++)
+    {
+        data[i] = default_initial_value;
+    }
 }
 
 MMU::~MMU()
@@ -45,7 +60,14 @@ std::string MMU::mem_dump()
 
 std::string MMU::core_dump()
 {
-    return std::string();
+    std::string output = "";
+
+    for (int i = 0; i < size; i++)
+    {
+        output += data[i];
+    }
+
+    return output;
 }
 
 std::string MMU::core_dump(int starting_from, int num_bytes)

@@ -1,9 +1,13 @@
 #include <string>
+#include <iostream>
+#include <sstream>
 
 class MMU
 {
 private:
-    /* data */
+    unsigned char data[1024];
+    int size;
+    int page_size;
 public:
     MMU(int size, char default_initial_value, int page_size);
     ~MMU();
