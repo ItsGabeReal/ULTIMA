@@ -1,11 +1,43 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cmath>
+
+struct MemorySegment
+{
+    bool allocated = false;
+    int handle;
+    int start;
+    int size;
+    int current = -1;
+    int task_id = -1;
+    MemorySegment* next;
+
+    std::string get_status()
+    {
+        return allocated ? "Used" : "Free";
+    }
+    int get_end()
+    {
+        return start + size - 1;
+    }
+    std::string get_current_location()
+    {
+        if (current == -1) return "NA";
+        else return std::to_string(current);
+    }
+    std::string get_task_id()
+    {
+        if (task_id == -1) return "MMU";
+        else return std::to_string(task_id);
+    }
+};
 
 class MMU
 {
 private:
     unsigned char data[1024];
+    MemorySegment* segments = nullptr;
     int size;
     int page_size;
 public:
