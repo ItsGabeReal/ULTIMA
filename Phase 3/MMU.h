@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include "Sema.h"
 
 struct MemorySegment
 {
@@ -40,6 +41,7 @@ private:
     MemorySegment* segments = nullptr;
     int size;
     int page_size;
+    Semaphore* sem;
 public:
     MMU(int size, char default_initial_value, int page_size);
     ~MMU();

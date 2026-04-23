@@ -59,6 +59,9 @@ int main()
     int task1 = scheduler.create_task("Task 1", worker, nullptr);
     int task2 = scheduler.create_task("Task 2", worker, nullptr);
     int task3 = scheduler.create_task("Task 3", worker, nullptr);
+    int task4 = scheduler.create_task("Task 1", worker, nullptr);
+    int task5 = scheduler.create_task("Task 2", worker, nullptr);
+    int task6 = scheduler.create_task("Task 3", worker, nullptr);
 
 
     /**
@@ -188,7 +191,7 @@ int main()
     /**
      * mem_read()
      */
-    std::cout << "\n---------- mem_free() Tests ----------" << std::endl;
+    std::cout << "\n---------- mem_read() Tests ----------" << std::endl;
 
     std::cout << "Single character" << std::endl;
 
@@ -233,6 +236,22 @@ int main()
      */
     std::cout << "\nTests finished: " << good_tests << "/" << total_tests << " passed." << std::endl;
 
+    // MMU mmu2(1024, '.', 64);
+    // int mem_handle_task1 = mmu2.mem_alloc(67, task1);
+    // int mem_handle_task2 = mmu2.mem_alloc(200, task2);
+    // int mem_handle_task3 = mmu2.mem_alloc(50, task3);
+    // int mem_handle_task4 = mmu2.mem_alloc(1, task4);
+    // int mem_handle_task5 = mmu2.mem_alloc(350, task5);
+    // int mem_handle_task6 = mmu2.mem_alloc(67, task6);
+    // std::cout << mmu2.mem_dump() << std::endl;
+
+    // mmu2.mem_free(mem_handle_task2, task2);
+    // mmu2.mem_free(mem_handle_task4, task4);
+
+    // std::cout << mmu2.mem_dump() << std::endl;
+
+    // mmu2.mem_free(mem_handle_task3, task3);
+    // std::cout << mmu2.mem_dump() << std::endl;
     
     return 0;
 }
