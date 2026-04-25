@@ -184,6 +184,13 @@ int MMU::mem_read(int mem_handle, int offset_from_beg, int text_size, std::strin
 {
     sem->down(thread_id);
 
+    // Do not allow for task to read before the start of the segment
+    if (offset_from_beg < 0)
+    {
+        sem->up(thread_id);
+        return -1;
+    }
+
     MemorySegment *current_segment = segments;
     // Find segment based on mem_handle
     while (current_segment != nullptr)
@@ -268,6 +275,13 @@ int MMU::mem_write(int mem_handle, char ch, int thread_id)
 int MMU::mem_write(int mem_handle, int offset_from_beg, std::string text, int thread_id)
 {
     sem->down(thread_id);
+
+    // Do not allow for task to write before the start of the segment
+    if (offset_from_beg < 0)
+    {
+        sem->up(thread_id);
+        return -1;
+    }
 
     MemorySegment *current_segment = segments;
     // Find segment based on mem_handle
