@@ -19,6 +19,7 @@
 #include "Sched.h"
 #include "WindowManager.h"
 #include "IPC.h"
+#include "MMU.h"
 
 using namespace std;
 
@@ -34,6 +35,7 @@ struct thread_data
     int thread_no;
     WINDOW *thread_win;
     int sleep_time;
+    int memory_needed;
     int thread_results;
     int task_id; // ID assigned to this task once created
 };
@@ -55,6 +57,7 @@ void simulate_work(int amount);
 Scheduler scheduler;
 WindowManager wManager(MAIN_TID, &scheduler);
 IPC ipc(MAX_TASKS);
+MMU mmu(1024, '.', 64);
 bool tasks_paused = false;
 
 int main()
@@ -71,14 +74,14 @@ int main()
     WINDOW* Heading_Win = create_heading_window();
 
     // Console
-    WINDOW *Console_Win = wManager.create_window(MAIN_TID, 12, 20, 30, 62);
+    WINDOW *Console_Win = wManager.create_window(MAIN_TID, 14, 20, 30, 62);
     wManager.write_window(Console_Win, MAIN_TID, 1, 1, "....Console....\n");
     wManager.write_window(Console_Win, MAIN_TID, 2, 1, "Ultima # ");
 
     // Dump
-    WINDOW* Dump_Win = wManager.create_window(MAIN_TID, 12, 80, 42, 2);
-    wManager.write_window(Dump_Win, MAIN_TID, "Dump Window");
-
+    WINDOW* Dump_Win = wManager.create_window(MAIN_TID, 41, 66, 3, 82);
+    wManager.write_window(Dump_Win, MAIN_TID, "\n..............Dump Window............\n");
+    
     // Thread 1
     thread_args_1.thread_win = wManager.create_window(MAIN_TID, 15, 25, 15, 2);
 
@@ -144,7 +147,7 @@ int main()
             break;
         case 'h':
             display_help(Console_Win);
-            wManager.write_window(Console_Win, MAIN_TID, 10, 1, "Ultima # ");
+            wManager.write_window(Console_Win, MAIN_TID, " Ultima # ");
             break;
         case 'q':
             // End the loop, and end the program.
@@ -163,9 +166,17 @@ int main()
             wManager.write_window(Dump_Win, MAIN_TID, wManager.get_window_lock().dump()+'\n');
             wManager.log(" Window semaphore dumped.\n");
             break;
-        case 'm':
+        case 'i':
             wManager.write_window(Dump_Win, MAIN_TID, ipc.message_dump()+'\n');
             wManager.log(" Messages dumped.\n");
+            break;
+        case 'm':
+            wManager.write_window(Dump_Win, MAIN_TID, mmu.mem_dump()+'\n');
+            wManager.log(" Memory Table dumped.\n");
+            break;
+        case 'n':
+            wManager.write_window(Dump_Win, MAIN_TID, mmu.core_dump()+'\n');
+            wManager.log(" Memory Table dumped.\n");
             break;
         case 'p':
             tasks_paused = true;
@@ -215,7 +226,7 @@ int main()
     wManager.log(" Thread 2 State = " + scheduler.get_state(thread_args_2.task_id) + "\n");
     wManager.log(" Thread 3 State = " + scheduler.get_state(thread_args_3.task_id) + "\n");
 
-    sleep(5);
+    sleep(2);
     return (0);
 }
 
@@ -225,15 +236,18 @@ int main()
 void display_help(WINDOW *Win)
 {
     wManager.clear_window(Win, MAIN_TID);
-    wManager.write_window(Win, MAIN_TID, 1, 1, "...Help...");
-    wManager.write_window(Win, MAIN_TID, 2, 1, "1,2,3 = Kill Task");
-    wManager.write_window(Win, MAIN_TID, 3, 1, "c = clear screen");
-    wManager.write_window(Win, MAIN_TID, 4, 1, "h = help screen");
-    wManager.write_window(Win, MAIN_TID, 5, 1, "s = dump scheduler");
-    wManager.write_window(Win, MAIN_TID, 6, 1, "e = dump semaphore");
-    wManager.write_window(Win, MAIN_TID, 7, 1, "m = dump messages");
-    wManager.write_window(Win, MAIN_TID, 8, 1, "p,r = pause/resume");
-    wManager.write_window(Win, MAIN_TID, 9, 1, "q = Quit");
+    wManager.write_window(Win, MAIN_TID, "\n");
+    wManager.write_window(Win, MAIN_TID, " ...Help...\n");
+    wManager.write_window(Win, MAIN_TID, " 1,2,3 = Kill Task\n");
+    wManager.write_window(Win, MAIN_TID, " c = clear screen\n");
+    wManager.write_window(Win, MAIN_TID, " h = help screen\n");
+    wManager.write_window(Win, MAIN_TID, " s = dump scheduler\n");
+    wManager.write_window(Win, MAIN_TID, " e = dump semaphore\n");
+    wManager.write_window(Win, MAIN_TID, " i = dump messages\n");
+    wManager.write_window(Win, MAIN_TID, " m = dump mem segs\n");
+    wManager.write_window(Win, MAIN_TID, " n = dump mem core\n");
+    wManager.write_window(Win, MAIN_TID, " p,r = pause/resume\n");
+    wManager.write_window(Win, MAIN_TID, " q = Quit\n");
 }
 
 /**
@@ -266,6 +280,7 @@ void create_tasks(thread_data &args_1, thread_data &args_2, thread_data &args_3)
     args_1.thread_no = 1;
     args_1.sleep_time = 1 + rand() % 3;
     args_1.thread_results = 0;
+    args_1.memory_needed = 16 + rand() % 333;
 
     id = scheduler.create_task("Task1", perform_simple_output, &args_1);
     args_1.task_id = id;
@@ -276,6 +291,7 @@ void create_tasks(thread_data &args_1, thread_data &args_2, thread_data &args_3)
     args_2.thread_no = 2;
     args_2.sleep_time = 1 + rand() % 3;
     args_2.thread_results = 0;
+    args_2.memory_needed = 16 + rand() % 333;
 
     id = scheduler.create_task("Task2", perform_simple_output, &args_2);
     args_2.task_id = id;
@@ -286,6 +302,7 @@ void create_tasks(thread_data &args_1, thread_data &args_2, thread_data &args_3)
     args_3.thread_no = 3;
     args_3.sleep_time = 1 + rand() % 3;
     args_3.thread_results = 0;
+    args_3.memory_needed = 16 + rand() % 333;
 
     id = scheduler.create_task("Task3", perform_simple_output, &args_3);
     args_3.task_id = id;
@@ -301,10 +318,12 @@ void *perform_simple_output(void *arguments)
     // extract the thread arguments:   (method 1)
     // cast arguments in to thread_data
     thread_data *td = (thread_data *)arguments;
+    int task_id = td->task_id;
     int thread_no = td->thread_no;
     int sleep_time = td->sleep_time;
     WINDOW *Win = td->thread_win;
     Message incoming_message;
+    int memory_handle = -1;
     int CPU_Quantum = 0;
     char buff[256];
 
@@ -313,7 +332,33 @@ void *perform_simple_output(void *arguments)
         usleep(10000); // Wait 10ms
 
     // Startup message
-    wManager.write_window(td->thread_win, td->task_id, 6, 1, "Starting Thread "+std::to_string(td->task_id)+"...\n");
+    wManager.write_window(Win, task_id, 6, 1, "Starting Thread "+std::to_string(task_id)+"...\n");
+    wManager.write_window(Win, task_id, " Asking for "+std::to_string(td->memory_needed)+"B of memory...\n");
+
+    while (memory_handle == -1)
+    {
+        memory_handle = mmu.mem_alloc(td->memory_needed, task_id);
+
+        if (memory_handle > -1)
+        {
+            wManager.write_window(Win, task_id, " Received mem at " + std::to_string(memory_handle) + "\n");
+            break;
+        }
+        
+        wManager.write_window(Win, td->task_id, " Unable to allocate\n");
+
+        // Let the scheduler decide if this task should pause or not
+        scheduler.yield();
+        sleep(2);
+        while (scheduler.get_state(td->task_id) != RUNNING || tasks_paused)
+            usleep(10000); // Wait 10ms
+        
+        wManager.write_window(Win, td->task_id, " Retrying...\n");
+    }
+
+    // Label memory segment
+    mmu.mem_write(memory_handle, 0, "Task-" + std::to_string(td->task_id) + " memory ", td->task_id);
+
 
     while (scheduler.get_state(td->task_id) != DEAD)
     {
@@ -321,7 +366,7 @@ void *perform_simple_output(void *arguments)
         int messages = ipc.message_receive(td->task_id, incoming_message);
         while (messages > 0)
         {
-            wManager.write_window(td->thread_win, td->task_id,
+            wManager.write_window(Win, task_id,
                 " From T"+std::to_string(incoming_message.source_task_id)+": "+incoming_message.text+"\n");
 
             messages = ipc.message_receive(td->task_id, incoming_message);
@@ -330,6 +375,20 @@ void *perform_simple_output(void *arguments)
         // Do some work
         wManager.write_window(Win, thread_no, " Task-" + std::to_string(thread_no) + " running #" + std::to_string(CPU_Quantum++) + "\n");
         simulate_work(500'000);
+
+        // Write to memory
+        wManager.write_window(Win, thread_no, " Writing to memory\n");
+        int result = mmu.mem_write(memory_handle, 64 + ((CPU_Quantum - 1) * 34), "<Using memory for important stuff>", task_id);
+
+        // Check if write failed (ran out of room in memory)
+        if (result == -1)
+        {
+            wManager.write_window(Win, thread_no, " Failed! Ending task..\n");
+            mmu.mem_free(memory_handle, task_id);
+            wManager.write_window(Win, thread_no, " Freed memory at " + std::to_string(memory_handle) + "\n");
+            sleep(2);
+            break;
+        }
 
         // Send message
         int recipient = ((td->task_id + 1) % MAX_TASKS) + 1;

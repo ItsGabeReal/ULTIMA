@@ -77,10 +77,10 @@ int main()
     
     MMU mmu(32, '.', 8);
     TEST("MMU initializes properly / core_dump() and mem_dump() work properly",
-        mmu.core_dump() == "................................"
+        mmu.core_dump() == " ........\n ........\n ........\n ........\n"
         && mmu.mem_dump() ==
         " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
-        " Free\t0\t0\t31\t32\tNA\tMMU");
+        " Free\t0\t0\t31\t32\tNA\tMMU\n");
 
     /**
      * mem_alloc()
@@ -91,14 +91,14 @@ int main()
     TEST("Single page allocated", mmu.mem_dump() ==
         " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
         " Used\t0\t0\t7\t8\t0\t1\n"
-        " Free\t8\t8\t31\t24\tNA\tMMU");
+        " Free\t8\t8\t31\t24\tNA\tMMU\n");
     
     mem_handle = mmu.mem_alloc(9, task2);
     TEST("Multiple pages allocated", mmu.mem_dump() ==
         " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
         " Used\t0\t0\t7\t8\t0\t1\n"
         " Used\t8\t8\t23\t16\t0\t2\n"
-        " Free\t24\t24\t31\t8\tNA\tMMU");
+        " Free\t24\t24\t31\t8\tNA\tMMU\n");
 
     // With the first 8 bytes already by task1, task2's handle should be 8
     TEST("Expected memory handle returned", mem_handle == 8);
@@ -120,17 +120,17 @@ int main()
 
     res = mmu.mem_write(8, 'H', task2);
     TEST("Write single character",
-        mmu.core_dump() == "........H.......................");
+        mmu.core_dump() == " ........\n H.......\n ........\n ........\n");
 
     res = mmu.mem_write(8, 'i', task2);
     TEST("Characters write sequentially",
-        mmu.core_dump() == "........Hi......................");
+        mmu.core_dump() == " ........\n Hi......\n ........\n ........\n");
 
     for (int i = 2; i < 16; ++i)
         mmu.mem_write(8, '*', task2); // Fill remaining memory with '*'
     res = mmu.mem_write(8, '!', task2); // Try (and fail) to write next character
     TEST("End of memory reached, and current_location gets reset to beginning",
-        mmu.core_dump() == "........Hi**************........"
+        mmu.core_dump() == " ........\n Hi******\n ********\n ........\n"
         && res == -1
         && scheduler.get_tcb_pointer(task2)->current_location == 0);
 
@@ -144,7 +144,7 @@ int main()
 
     mmu.mem_write(0, 1, "Hello", task1);
     TEST("Write multiple memory values at once", mmu.core_dump() ==
-        ".Hello..Hi**************........");
+        " .Hello..\n Hi******\n ********\n ........\n");
 
     res = mmu.mem_write(0, 1, "********", task1); // Try to write 1 char beyond the allocated size
     TEST("Return -1 when memory range is invalid", res == -1);
@@ -172,20 +172,20 @@ int main()
         " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
         " Free\t0\t0\t7\t8\tNA\tMMU\n"
         " Used\t8\t8\t23\t16\t0\t2\n"
-        " Free\t24\t24\t31\t8\tNA\tMMU"
-        && mmu.core_dump() == "........Hi**************........");
+        " Free\t24\t24\t31\t8\tNA\tMMU\n"
+        && mmu.core_dump() == " ........\n Hi******\n ********\n ........\n");
 
     mmu.mem_free(8, task2);
     TEST("Free multiple blocks of memory & coalesce empty space", mmu.mem_dump() ==
         " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
-        " Free\t0\t0\t31\t32\tNA\tMMU"
-        && mmu.core_dump() == "................................");
+        " Free\t0\t0\t31\t32\tNA\tMMU\n"
+        && mmu.core_dump() == " ........\n ........\n ........\n ........\n");
 
     mmu.mem_alloc(8, task1);
     TEST("Task acquires new memory after freeing", mmu.mem_dump() ==
         " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n"
         " Used\t0\t0\t7\t8\t0\t1\n"
-        " Free\t8\t8\t31\t24\tNA\tMMU");
+        " Free\t8\t8\t31\t24\tNA\tMMU\n");
     
 
     /**

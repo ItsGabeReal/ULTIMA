@@ -297,14 +297,14 @@ int MMU::mem_write(int mem_handle, int offset_from_beg, std::string text, int th
             }
 
             // Check if text will fit in the segment
-            if (current_segment->size - offset_from_beg < text.size())
+            if ((current_segment->size - offset_from_beg) < (int)text.size())
             {
                 sem->up(thread_id);
                 return -1;
             }
 
             // Write each character to the segment
-            for (int i = 0; i < text.size(); i++)
+            for (int i = 0; i < (int)text.size(); i++)
             {
                 data[current_segment->start + offset_from_beg + i] = text[i];
             }
@@ -326,20 +326,20 @@ std::string MMU::mem_dump()
     sem->down(0);
 
     std::stringstream str;
-    str << " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID";
+    str << " Status\tHandle\tStart\tEnd\tSize\tCurrent\tTask-ID\n";
 
     MemorySegment *current_segment = segments;
 
     while (current_segment != nullptr)
     {
-        str << "\n "; // New line and extra padding for nCurses Window
+        str << " "; // New line and extra padding for nCurses Window
         str << current_segment->get_status() << "\t";
         str << current_segment->handle << "\t";
         str << current_segment->start << "\t";
         str << current_segment->get_end() << "\t";
         str << current_segment->size << "\t";
         str << current_segment->get_current_location() << "\t";
-        str << current_segment->get_task_id();
+        str << current_segment->get_task_id() << "\n";
         current_segment = current_segment->next;
     }
 
@@ -351,11 +351,17 @@ std::string MMU::core_dump()
 {
     sem->down(0);
 
-    std::string output = "";
+    std::string output = " ";
 
     for (int i = 0; i < size; i++)
     {
         output += data[i];
+        if ((i + 1) % page_size == 0)
+        {
+            output += "\n";
+            if ((i + 1) != size)
+                output += " ";
+        } 
     }
 
     sem->up(0);

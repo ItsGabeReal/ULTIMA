@@ -9,7 +9,7 @@ WindowManager::WindowManager(int thread_id, Scheduler* scheduler)
     display_screen_data(); // Display the stdscr display geometry
 
     //----------------------- Create Log Window ------------------------
-    Log_Win = create_window(main_thread_id, 12, 60, 30, 2);
+    Log_Win = create_window(main_thread_id, 14, 60, 30, 2);
     write_window(Log_Win, main_thread_id, 1, 5, " .....Log Window.....\n");
     write_window(Log_Win, main_thread_id, " ..........Main program started..........\n");
 }
